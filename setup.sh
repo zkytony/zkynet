@@ -34,3 +34,11 @@ if [ ! -d "feedbackprize" ]; then
     unzip feedback-prize-2021.zip -d feedbackprize
     rm feedback-prize-2021.zip
 fi
+
+## mnist sign language
+if [ ! -d "mnist_sign_language" ]; then
+    echo -e "Downloading MNIST Sign Language dataset"
+    kaggle datasets download -d datamunge/sign-language-mnist
+    unzip sign-language-mnist.zip -d mnist_sign_language
+    rm sign-language-mnist.zip
+fi
