@@ -1,44 +1,46 @@
 #!/bin/bash
+########### This section is almost fixed for every project ##########
+# Run this script from repository root
+if [[ ! $PWD = *zkynet ]]; then
+    echo "You must be in the root directory of the cos-pomdp repository."
+    return 1
+fi
+repo_root=$PWD
 
-# DOWNLOAD DATASETS
-cd datasets/
+# Utility functions
+function first_time_setup
+{
+    if [ ! -e "$1/.DONE_SETUP" ]; then
+        # has not successfully setup
+        true && return
+    else
+        false
+    fi
+}
+#####################################################################
 
-## Simple tabular housing dataset
-if [ ! -d "bostonhousing" ]; then
-    echo -e "Downloading Boston Housing dataset"
-    kaggle datasets download -d schirmerchad/bostonhoustingmlnd
-    unzip bostonhoustingmlnd.zip -d bostonhousing
-    rm bostonhoustingmlnd.zip
+############ sourcing virtualenv business ###########################
+if [ ! -d "venv/zkynet" ]; then
+    virtualenv -p python3 venv/zkynet
+    source venv/zkynet/bin/activate
 fi
 
-## basics image -- mnist
-if [ ! -d "mnist" ]; then
-    echo -e "Downloading MNIST (csv) dataset (competition)"
-    kaggle competitions download -c digit-recognizer
-    unzip digit-recognizer.zip -d mnist
-    rm digit-recognizer.zip
+source_venv=true
+if [[ "$VIRTUAL_ENV" == *"zkynet"* ]]; then
+    source_venv=false
 fi
 
-## emotional speech dataset
-if [ ! -d "emotionalspeech" ]; then
-    echo -e "Downloading Emotional Speech dataset"
-    kaggle datasets download -d uwrfkaggler/ravdess-emotional-speech-audio
-    unzip ravdess-emotional-speech-audio.zip -d emotionalspeech
-    rm ravdess-emotional-speech-audio.zip
+if [ $source_venv = true ]; then
+    source venv/zkynet/bin/activate
 fi
 
-## stretch -- $160,000 Kaggle Competition; natural language processing
-if [ ! -d "feedbackprize" ]; then
-    echo -e "Downloading Feedback Prize dataset (competition)"
-    kaggle competitions download -c feedback-prize-2021
-    unzip feedback-prize-2021.zip -d feedbackprize
-    rm feedback-prize-2021.zip
+# ask if want to create alias command
+if [[ $source_venv = false ]]; then
+    read -p "Create alias 'zkynet' for starting zkynet venv? " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]];
+    then
+        echo -e "alias zkynet='cd $repo_root; source setup.bash'" >> ~/.bashrc
+    fi
 fi
-
-## mnist sign language
-if [ ! -d "mnist_sign_language" ]; then
-    echo -e "Downloading MNIST Sign Language dataset"
-    kaggle datasets download -d datamunge/sign-language-mnist
-    unzip sign-language-mnist.zip -d mnist_sign_language
-    rm sign-language-mnist.zip
-fi
+####################################################################
