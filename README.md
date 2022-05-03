@@ -9,10 +9,12 @@ exploring deep learning basics
     You should install:
     ```
     pip install torch torchvision
+    pip install matplotlib
+    pip install jupyter
     ```
 
 
-2. Install [JAX](https://github.com/google/jax)
+2. Install [JAX](https://github.com/google/jax).
    Follow the steps for [GPU (CUDA)](https://github.com/google/jax#pip-installation-gpu-cuda).
    Essentially:
    1. Make sure your CUDA and cuDNN versions are correct
