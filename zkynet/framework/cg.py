@@ -21,27 +21,32 @@ class Function:
     inputs (ordered) to an output subject to some
     internal parameters.
     """
-    def __init__(self, inputs, params={}):
+    def __init__(self, inputs, params=None):
         """
         Args:
             inputs (tuple): a tuple of ordered inputs, each a Variable.
-            params (dict): maps from parameter name to a Parameter
-                or a Constant.
+            params (list/set-like): parameters, either a Parameter or a Constant.
+                order does not matter
         """
-        assert all(isinstance(inputs[name], Variable) for name in inputs),\
+        assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
-        assert all(isinstance(params[name], Parameter)\
-                   or isinstance(params[name], Constant) for name in params),\
+        assert all(isinstance(param, Parameter)\
+                   or isinstance(param, Constant) for param in params),\
             f"all objects in 'params' must be of type Parameter or Constant"
 
-        self._ordered_input_names = (inp.name for inp in inputs)
+        self._ordered_input_names = tuple(inp.name for inp in inputs)
         self._inputs = {inp.name: inp for inp in inputs}
-        self._params = params
+        self._params = {}
+        if params is not None:
+            self._params = {param.name: param for param in params}
 
-    def param(self, name):
+    def param_node(self, name):
+        """Get an InputNode for the given parameter;
+        Used to construct computational graph."""
         if name not in self._params:
             raise ValueError(f"{name} is not a parameter.")
-        return self._params[name]
+        param = self._params[name]
+        return InputNode(param.value)
 
     @property
     def inputs(self):
@@ -57,6 +62,23 @@ class Function:
         Output:
            a FunctionNode, a number or array-like."""
         raise NotImplementedError
+
+    def _construct_input_nodes(self, *input_vals):
+        """input nodes to this FunctionNode."""
+        input_nodes = []
+        try:
+            for i in range(len(self._ordered_input_names)):
+                input_name = self._ordered_input_names[i]
+                input_val = input_vals[i]
+                if not isinstance(input_val, Node):
+                    node = InputNode(input_val)
+                    input_nodes.append(node)
+                else:
+                    input_nodes.append(input_val)
+        except IndexError:
+            raise ValueError("When calling a function, all its inputs must be instantiated.")
+        return input_nodes
+
 
     def __call__(self, *input_vals, **call_args):
         """The function is called (forward-pass).
@@ -76,20 +98,8 @@ class Function:
             Value: an object that represents a node in the grounded
                 computational graph.
         """
-        input_nodes = {}  # input nodes to this FunctionNode.
-
-        try:
-            for i in range(len(self._ordered_input_names)):
-                input_name = self._ordered_input_names[i]
-                if not isinstance(input_vals[i], Node):
-                    node = InputNode(input_vals[i])
-                    input_nodes[input_name] = node
-                else:
-                    input_nodes[input_name] = input_vals[i]
-        except IndexError:
-            raise ValueError("When calling a function, all its inputs must be instantiated.")
-
-        output_val = self.call(*assigned_inputs, **call_args)
+        input_nodes = self._construct_input_nodes(*input_vals)
+        output_val = self.call(*input_nodes, **call_args)
 
         # Wrap the output value as a FunctionNode, and connect the graph.
         if isinstance(output_val, FunctionNode):
@@ -110,6 +120,11 @@ class Input:
     def __init__(self, name, input_type):
         self.name = name
         self.input_type = input_type
+        self._value = None
+
+    @property
+    def value(self):
+        return self._value
 
 
 class Variable(Input):
@@ -120,8 +135,8 @@ class Variable(Input):
 
 class Parameter(Input):
     """Model parameter; you HAVE control over."""
-    def __init__(self, init_value=None):
-        super().__init__("parameter")
+    def __init__(self, name, init_value=None):
+        super().__init__(name, "parameter")
         self._value = init_value
 
     def __hash__(self):
@@ -138,8 +153,8 @@ class Constant(Input):
     """Its value should not change; could
     be used to specify configuration of a
     function (e.g. kernel size of convolution)"""
-    def __init__(self, val):
-        super().__init__("constant")
+    def __init__(self, name, val):
+        super().__init__(name, "constant")
         self._value = val
 
     def assign(self, v):
@@ -187,7 +202,7 @@ class InputNode(Node):
     """A leaf node in the computational graph"""
     def __init__(self, value, parent=None, parent_input_name=None):
         super().__init__(value, parent=parent,
-                         parent_input_name=paren_input_name)
+                         parent_input_name=parent_input_name)
 
     def set_parent(self, parent, parent_input_name):
         self._parent = parent
