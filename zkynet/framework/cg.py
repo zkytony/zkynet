@@ -47,8 +47,15 @@ class Function:
     def inputs(self):
         return self._inputs
 
-    def call(self, *inputs, **call_args):
-        """Function to be overriden"""
+    def call(self, *input_nodes, **call_args):
+        """Function to be overriden
+
+        Args:
+           *input_nodes (Node): nodes with values
+                that are inputs to this function
+                on the computation graph.
+        Output:
+           a FunctionNode, a number or array-like."""
         raise NotImplementedError
 
     def __call__(self, *input_vals, **call_args):
@@ -85,6 +92,11 @@ class Function:
         output_val = self.call(*assigned_inputs, **call_args)
 
         # Wrap the output value as a FunctionNode, and connect the graph.
+        if isinstance(output_val, FunctionNode):
+            # "call" returns likely the output of running "call" for some other
+            # function.  The underlying numeric value is taken, yet we need to
+            # wrap it with a new FunctionNode for this function, by convention.
+            output_val = output_val.value
         output_node = FunctionNode(self, output_val, input_nodes)
         for input_name in input_nodes:
             input_nodes[input_name].set_parent(output_node, input_name)
@@ -161,6 +173,11 @@ class Node:
         self._children = children
         self._parent = parent
         self._parent_input_name = parent_input_name
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
 
     def isleaf(self):
         return len(self._children) == 0

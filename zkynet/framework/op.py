@@ -5,20 +5,15 @@ from .cg import Function, Variable
 
 class Add(Function):
     def __init__(self):
-        super().__init__(inputs={"a": Variable(), "b": Variable()})
+        super().__init__(inputs=(Variable("a"), Variable("b")))
 
-    def call(self, **inputs):
-
-
-        return a + b
-
-    def grad(self):
-        return
+    def call(self, a, b):
+        return a.value + b.value
 
 
 class Multiply(Function):
     def __init__(self, a, b):
-        super().__init__(inputs={"a": a, "b": b})
+        super().__init__(inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
-        return a * b
+        return a.value * b.value
