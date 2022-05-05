@@ -53,18 +53,15 @@ class Function:
 
     def __call__(self, *input_vals, **call_args):
         """The function is called (forward-pass).
-
-        At call time, the inputs are assigned variables.
+        A computational graph is dynamically created.
+        The input_vals will be converted (if not already)
+        to a Node object.
 
         Args:
             *input_vals: each input is the value of an input
                 that defines this function. Order matters.
                 This value is either just a value (e.g. numpy array),
-                an InputNode, or a ValueNode. In the first case,
-                a corresponding InputNode will be generated and
-                assigned the given value.
-            *input_vals: each input is the value of an input
-                that defines this function. Order matters.
+                an InputNode, or a FunctionNode.
             **call_args: call-time configurations to pass down
                  to call.
 
@@ -72,34 +69,26 @@ class Function:
             Value: an object that represents a node in the grounded
                 computational graph.
         """
-        assigned_inputs = self._assign_inputs(*input_vals)
-        if not _check_inputs_instantiated(assigned_inputs):
-            raise ValueError("When calling a function, all its inputs must be instantiated.\n"\
-                             "The uninstantiated inputs are:\n",
-                             _get_uninstantiated_inputs(assigned_inputs))
-        output = self.call(*assigned_inputs, **call_args)
-        # For most cases, the user when implementing 'call' won't
-        # be bothered by the internal workings of this computation
-        # graph. Therefore, we will wrap the user's output with Value.
-        if not isinstance(output, Value):
-            return Value(assigned_inputs, output)
-        else:
-            raise ValueError(f"Output of {type(self)}.call is of type Value."\
-                             "This is unexpected. Try returning the output"\
-                             "without constructing the Value object.")
+        input_nodes = {}  # input nodes to this FunctionNode.
 
-    def _assign_inputs(self, *inputs):
-        """inputs:"""
-        for varname in self._vars:
-            if varname not in inputs:
-                raise ValueError(f"Variable {varname} is not assigned.")
+        try:
+            for i in range(len(self._ordered_input_names)):
+                input_name = self._ordered_input_names[i]
+                if not isinstance(input_vals[i], Node):
+                    node = InputNode(input_vals[i])
+                    input_nodes[input_name] = node
+                else:
+                    input_nodes[input_name] = input_vals[i]
+        except IndexError:
+            raise ValueError("When calling a function, all its inputs must be instantiated.")
 
-        for name in inputs:
-            if name not in self.inputs:
-                raise ValueError(f"{name} is not a recognized input.")
-            if isinstance(self.inputs[name], Constant):
-                raise ValueError("Constants cannot be assigned.")
-            self.inputs[name].assign(inputs[varname])
+        output_val = self.call(*assigned_inputs, **call_args)
+
+        # Wrap the output value as a FunctionNode, and connect the graph.
+        output_node = FunctionNode(self, output_val, input_nodes)
+        for input_name in input_nodes:
+            input_nodes[input_name].set_parent(output_node, input_name)
+        return output_node
 
 
 class Input:
@@ -179,9 +168,13 @@ class Node:
 
 class InputNode(Node):
     """A leaf node in the computational graph"""
-    def __init__(self, value, parent, parent_input_name):
+    def __init__(self, value, parent=None, parent_input_name=None):
         super().__init__(value, parent=parent,
                          parent_input_name=paren_input_name)
+
+    def set_parent(self, parent, parent_input_name):
+        self._parent = parent
+        self._parent_input_name = parent_input_name
 
 
 class FunctionNode(Node):
