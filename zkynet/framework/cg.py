@@ -49,6 +49,10 @@ class Function:
         return InputNode(param.value)
 
     @property
+    def name(self):
+        return self.__class__.__name__
+
+    @property
     def inputs(self):
         return self._inputs
 
@@ -216,7 +220,7 @@ class Node:
     def __str__(self):
         func_str = ""
         if self._parent is not None and self._parent_input_name is not None:
-            func_str = f"-->{type(self._parent._fun)}[{self._parent_input_name}]"
+            func_str = f"-->{self._parent._fun.name}:{self._parent_input_name}"
         return f"{self.__class__.__name__}({self.value}){func_str}"
 
     def __repr__(self):
@@ -242,3 +246,9 @@ class FunctionNode(Node):
                          children=children,
                          parent=parent,
                          parent_input_name=parent_input_name)
+
+    def __str__(self):
+        func_str = ""
+        if self._parent is not None and self._parent_input_name is not None:
+            func_str = f"-->{self._parent._fun.name}[{self._parent_input_name}]"
+        return f"{self.__class__.__name__}<{self._fun.name}>({self.value}){func_str}"

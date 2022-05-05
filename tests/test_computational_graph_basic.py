@@ -33,14 +33,14 @@ def test_model1():
     # and stores gradients.
     x = np.array([3])
     result = m(x)
-    assert result == (3+1)*3**2
+    assert result == 36
 
     # obtain the gradient of the function output with
     # respect to inputs (these are numbers that are
     # basically gradient function with assigned inputs
     # and parameters).
-    dmdw = m.grad("w"); assert dmdw == 3**2
-    dmdx = m.grad("x"); assert dmdx == 3**2 + (3+1)*2*3
+    dmdw = m.grad("w"); assert dmdw == 9
+    dmdx = m.grad("x"); assert dmdx == 33  # 3**2 + (3+1)*2*3
 
     # obtain the gradient function; these are functions
     # that you can later use. Note that they are also
