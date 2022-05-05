@@ -15,15 +15,15 @@ exploring deep learning basics.
 
 ** Setup
 
-1. Run `setup.sh` to create and activate a designated virtualenv,
+1. Run ~setup.sh~ to create and activate a designated virtualenv,
    if you so desire.
 
     You should then install:
-    #+begin_quote
+    #+begin_src
     pip install torch torchvision
     pip install matplotlib
     pip install jupyter
-    #+end_quote
+    #+end_src
 
 
 ** Install JAX
@@ -43,7 +43,7 @@ Install [[https://github.com/google/jax][JAX]].
 
 ** (Optional): Download Kaggle Datasets
 
-    Run `download_datasets.sh`
+    Run ~download_datasets.sh~
 
     This will download several kaggle datasets.
 
@@ -73,3 +73,15 @@ Install [[https://github.com/google/jax][JAX]].
 
     In fact, people use JAX as a deep learning framework
     too - alongside PyTorch. See [[https://www.reddit.com/r/MachineLearning/comments/shsfkm/d_current_state_of_jax_vs_pytorch/hv4h3k7/][this reddit post]].
+
+**** autograd
+     [[https://github.com/HIPS/autograd][autograd]] is a library that differentiates native Python and Numpy code.
+     Pytorch either uses this library or implements something like it ([[https://pytorch.org/docs/stable/autograd.html][torch.autograd]])
+     that works on Pytorch's tensors (instead of native python / numpy data structures).
+
+     Autograd's ~grad~ function takes in a function, and gives you a function that
+     computes its derivative.
+
+     一开始我觉得Autograd很神奇，跟tensorflow不一样。但是，实际上他们是一样的。
+     背后都有一个operation framework，只不过tensorflow是用自定义的framework，
+     而autograd利用的numpy和python自带的，比较轻便罢了。本质上的原理没有区别。
