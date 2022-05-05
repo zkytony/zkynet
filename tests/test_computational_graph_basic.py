@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
 from zkynet.framework import cg
 from zkynet.framework import op
+from zkynet.visual import plot_cg
 import numpy as np
 
 class MyTestModel1(cg.Function):
@@ -18,14 +19,23 @@ class MyTestModel1(cg.Function):
                          params=(cg.Parameter("w", w0),))
 
     def call(self, x):
-        import pdb; pdb.set_trace()
         a = op.add(x, self.param_node("w"))
         b = op.square(x)
         c = op.mult(a, b)
         return c
 
+def test_model1_forward():
+    m = MyTestModel1()
+    assert m._params["w"] == 1  # initial value
 
-def test_model1():
+    # forward pass; constructs computation graph,
+    # and stores gradients.
+    x = 3
+    result = m(x)
+    assert result.value == 36
+
+
+def test_visualize_cg():
     m = MyTestModel1()
     assert m._params["w"] == 1  # initial value
 
@@ -33,7 +43,16 @@ def test_model1():
     # and stores gradients.
     x = np.array([3])
     result = m(x)
-    assert result == 36
+    plot_cg(result)
+
+
+def test_model1_gradient():
+    m = MyTestModel1()
+    assert m._params["w"] == 1  # initial value
+
+    # forward pass; constructs computation graph,
+    # and stores gradients.
+    x = np.array([3])
 
     # obtain the gradient of the function output with
     # respect to inputs (these are numbers that are
@@ -51,4 +70,5 @@ def test_model1():
     assert fun_dmdx(x=3, w=1) == dmdx
 
 if __name__ == "__main__":
-    test_model1()
+    test_model1_forward()
+    test_visualize_cg()

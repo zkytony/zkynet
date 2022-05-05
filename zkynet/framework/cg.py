@@ -101,8 +101,8 @@ class Function:
                  to call.
 
         Returns:
-            Value: an object that represents a node in the grounded
-                computational graph.
+            FunctionNode: an object that represents a non-leaf node
+                in the grounded computational graph.
         """
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes, **call_args)
@@ -174,7 +174,31 @@ class Constant(Input):
 
 
 ########### The computation graph components ##########
-class Node:
+class IDObject:
+    """Object with an ID"""
+    COUNTER = {}
+    def __init__(self, objtype):
+        if objtype not in IDObject.COUNTER:
+            IDObject.COUNTER[objtype] = 0
+        next_id = IDObject.COUNTER[objtype]
+        self._id = f"{objtype}_{next_id}"
+        IDObject.COUNTER[objtype] += 1
+
+    def __hash__(self):
+        return hash(self._id)
+
+    def __eq__(self, other):
+        if isinstance(other, IDObject):
+            return self._id == other._id
+        else:
+            return False
+
+    @property
+    def id(self):
+        return self._id
+
+
+class Node(IDObject):
     """Node in the computation graph, a DAG.
     A node can always be regarded as an instantiation of
     a particular Input to a Function. It carries a value.
@@ -188,19 +212,22 @@ class Node:
     is not a leaf node. Both should be grounded with values.
     The value of the FunctionNode represents the output
     of the function under some InputNode instantiation."""
-    def __init__(self, value, children={}, parent=None, parent_input_name=None):
+    def __init__(self, value, children=None, parent=None, parent_input_name=None):
         """
         Args:
-            children (dict): maps from string name to Node
+            children (list): list of children nodes of this node
             parent (FunctionNode): the node of the function that
                 this node is an input for.
             parent_input_name (str): the name of the input to the
                 parent function that this node corresponds to.
         """
+        if children is None:
+            children = []
         self._children = children
         self._parent = parent
         self._parent_input_name = parent_input_name
         self._value = value
+        super().__init__(self.__class__.__name__)
 
     @property
     def value(self):
@@ -208,6 +235,14 @@ class Node:
 
     def isleaf(self):
         return len(self._children) == 0
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def parent_input_name(self):
+        return self._parent_input_name
 
     @property
     def children(self):
@@ -252,3 +287,7 @@ class FunctionNode(Node):
         if self._parent is not None and self._parent_input_name is not None:
             func_str = f"-->{self._parent._fun.name}[{self._parent_input_name}]"
         return f"{self.__class__.__name__}<{self._fun.name}>({self.value}){func_str}"
+
+    @property
+    def function(self):
+        return self._fun
