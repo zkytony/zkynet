@@ -29,8 +29,7 @@ def _get_uninstantiated_inputs(inputs):
 
 
 def _check_input_types_valid(self, inputs):
-    return all(isinstance(inputs[name], Input)
-               for name in inputs)
+    return
 
 
 class Node:
@@ -49,25 +48,44 @@ class Node:
 
 
 class Function(Node):
-    """
-    A Function takes inputs (each of type Input) and
-    produces an output (of type Value). The output
-    is only defined when all input variables are assigned.
-    """
-    def __init__(self, inputs={}):
+    def __init__(self, inputs=tuple(), params={}):
         """
+        A Function takes inputs and produces an output. The output
+        (of type Value) is only defined when all input variables are assigned.
+
+        The function can be parameterized.  These parameters can either
+        be constant (of type Constant) or changeable (of type Parameter).
+
+        Internally, both inputs (Variables) and Parameters (or Constants) are
+        Input nodes on the computational graph.
+
+        The inputs (non-parameters) are ordered.
+
+        Mathematically, the function is:
+
+            f (inputs ; params)
+
         Args:
-            inputs (dict): maps from input name (str) to an Input object.
+            inputs (tuple): a tuple of ordered inputs, each
+                a Variable or a Function object.
+            params (dict): maps from parameter name to a Parameter
+                or a Constant.
         """
-        assert _check_input_types_valid(inputs),\
-            f"inputs must be either Function or numpy array. Got: {inputs}"
-        super().__init__(inputs)
-        self._vars = {name:inputs[name] for name in inputs
-                      if isinstance(inputs[name], Variable)}
-        self._params = {name:inputs[name] for name in inputs
-                        if isinstance(inputs[name], Parameter)}
-        self._constants = {name:inputs[name] for name in inputs
-                           if isinstance(inputs[name], Constant)}
+        assert all(isinstance(inputs[name], Variable) for name in inputs),\
+            f"inputs must be Variable or Function. "
+
+        self._ordered_input_names = (inp.name for inp in inputs)
+        children = {**{inp.name: inp for inp in inputs}, **params}
+        super().__init__(children)
+
+    def param(self, name):
+        if name not in self._params:
+            raise ValueError(f"{name} is not a parameter.")
+        return self.inputs[name]
+
+    @property
+    def inputs(self):
+        return self._children
 
     def call(self, **inputs):
         """Function to be overriden"""
@@ -78,26 +96,27 @@ class Function(Node):
         for varname in self._vars:
             if varname not in inputs:
                 raise ValueError(f"Variable {varname} is not assigned.")
-            self._vars[varname].assign(inputs[varname])
 
-        for param_name in self._params:
-            if param_name in inputs:
-                self._params[param_name].assign(inputs[param_name])
-
-        for const_name in self._constants:
-            if const_name in inputs:
+        for name in inputs:
+            if name not in self.inputs:
+                raise ValueError(f"{name} is not a recognized input.")
+            if isinstance(self.inputs[name], Constant):
                 raise ValueError("Constants cannot be assigned.")
+            self.inputs[name].assign(inputs[varname])
 
-    def __call__(self, *inputs):
+    def __call__(self, *inputs, **kwargs):
         """The function is called (forward-pass)
 
         Args:
-            **inputs: mapping from input name to value.
-                This will assign the inputs to this function
-                to the given value. Note that (1) only Variables
-                and Parameters can be assigned (the latter should
+            *inputs: the values to inputs in the order that
+                 defines this function. The inputs to to this function
+                 will be assigned to the given value. Note that
+                (1) only Variables and Parameters can be assigned (the latter should
                 be optional); (2) the function throws an exception
                 if not all Variables are assigned a value.
+
+            **kwargs: other assignments, perhaps
+
         Returns:
             Value: an object that represents a node in the grounded
                 computational graph.
@@ -123,10 +142,6 @@ class Function(Node):
         """Returns a dictionary that maps function that can be called to compute
         the gradient to this function"""
         raise NotImplementedError
-
-    @property
-    def params(self):
-        return self._params
 
 
 class Input(Node):
@@ -158,8 +173,9 @@ class Input(Node):
 
 class Variable(Input):
     """Input variable; you have no control over."""
-    def __init__(self):
-        super().__init__("variable")
+    def __init__(self, name):
+        super().__init__(name, "variable")
+        self.name = name
 
 
 class Parameter(Input):
@@ -198,11 +214,12 @@ class Value(Node):
 
     Note: Value is immutable, and it is NOT designed to
     be an input to a Function."""
-    def __init__(self, inputs, val):
+    def __init__(self, inputs, val, fun):
         """
         Args:
            inputs (dict-like): maps from name to Input; should be instantiated.
            val (array-like): the actual value
+           fun (Function): the Function this Value grounds for.
         """
         assert _check_inputs_instantiated(inputs),\
             "The inputs to a Value node must have been instantiated."
@@ -212,3 +229,4 @@ class Value(Node):
 
         super().__init__(_inputs)
         self._value = val
+        self._fun = fun

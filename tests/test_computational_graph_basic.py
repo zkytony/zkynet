@@ -26,8 +26,7 @@ class MyTestModel1(cg.Function):
 
 def test_model1():
     m = MyTestModel1()
-    print(m.params)
-    assert m.params["w"] == 1  # initial value
+    assert m.param("w") == 1  # initial value
 
     # forward pass; constructs computation graph,
     # and stores gradients.
