@@ -1,0 +1,75 @@
+* zkynet
+exploring deep learning basics.
+
+** Progress tracker
+
+ - [X] Implement basic feed-forward network
+ - [ ] Be able to train the network using gradient descent
+   - [ ] Implement a framework for automatic differentiation
+ - [ ] Implement convolutional neural network
+ - [ ] Implement recurrent neural network
+ - [ ] Implement auto-encoder
+ - [ ] Implement transformer
+
+
+
+** Setup
+
+1. Run `setup.sh` to create and activate a designated virtualenv,
+   if you so desire.
+
+    You should then install:
+    #+begin_quote
+    pip install torch torchvision
+    pip install matplotlib
+    pip install jupyter
+    #+end_quote
+
+
+** Install JAX
+For some parts of the codebase, you may need to use JAX.
+
+Install [[https://github.com/google/jax][JAX]].
+   Follow the steps for [[https://github.com/google/jax#pip-installation-gpu-cuda][[GPU (CUDA)]].
+   Essentially:
+
+   1. Make sure your CUDA and cuDNN versions are correct
+   2. Then run a pip install command to install `jax[cuda]`. As of 05/02/2022:
+
+      #+begin_src
+      pip install --upgrade "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_releases.html  # Note: wheels only available on linux.
+      #+end_src
+
+
+** (Optional): Download Kaggle Datasets
+
+    Run `download_datasets.sh`
+
+    This will download several kaggle datasets.
+
+
+** Notes
+*** Learning
+**** JAX
+    The JAX library provides a high-level interface
+    ~jax.numpy~ and a low-level interface ~jax.lax~. The
+    low-level interface is stricter, but often more
+    powerful. Functions in ~jax.numpy~ eventually get
+    passed down to calls to ~jax.lax~ functions.
+
+    In JAX, arrays are ALWAYS immutable.
+
+    The main feature of JAX is "Just-In-Time" compilation,
+    which means code gets compiled the first time they
+    are run. Doc says:
+    #+begin_quote
+    Not all JAX code can be JIT compiled, as it requires array shapes to be
+    static & known at compile time
+    #+end_quote
+
+    The way JAX can do JIT is because it expresses
+    its operations in terms of XLA (the Accelerated Linear
+    Algebra compiler).
+
+    In fact, people use JAX as a deep learning framework
+    too - alongside PyTorch. See [[https://www.reddit.com/r/MachineLearning/comments/shsfkm/d_current_state_of_jax_vs_pytorch/hv4h3k7/][this reddit post]].
