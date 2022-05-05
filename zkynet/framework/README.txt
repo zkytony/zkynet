@@ -1,5 +1,6 @@
 A computational graph framework with auto diff support.
 
-We assume numpy / jax representation of tensors.
-Although we do not (need to) use their features
-for auto diff (e.g. jax.grad).
+The goal is to experience how to build something like
+this. It is not to build something for actual use.
+So, we can keep it small and simple, as long as it is
+conceptually clear.
