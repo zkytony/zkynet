@@ -1,7 +1,7 @@
-from .function import Function
+from .cg import Function
 
-class Identity(Function):
-    def call()
+# class Identity(Function):
+#     def call()
 
 class Add(Function):
     def __init__(self, a, b):

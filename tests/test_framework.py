@@ -1,8 +1,12 @@
+import os, sys
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(ABS_PATH, '../'))
+
 from zkynet.framework import cg
 from zkynet.framework import op
 import numpy as np
 
-class MyTestModel1(Function):
+class MyTestModel1(cg.Function):
     """A rather simple function that represents:
 
     f(x,w) = (x+w)*x^2
@@ -19,8 +23,10 @@ class MyTestModel1(Function):
         c = op.mult(a, b)
         return c
 
+
 def test_model1():
     m = MyTestModel1()
+    print(m.params)
     assert m.params["w"] == 1  # initial value
 
     # forward pass; constructs computation graph,
@@ -42,3 +48,6 @@ def test_model1():
     fun_dmdx = m.grad_fn("x")
     assert fun_dmdw(x=3, w=1) == dmdw
     assert fun_dmdx(x=3, w=1) == dmdx
+
+if __name__ == "__main__":
+    test_model1()
