@@ -16,6 +16,23 @@ than connectivity.
 
 import numpy as np
 
+
+def _check_inputs_instantiated(inputs):
+    return all(inputs[name].instantiated
+               for name in inputs)
+
+
+def _get_uninstantiated_inputs(inputs):
+    return {name: inputs[name]
+            for name in inputs
+            if not inputs[name].instantiated}
+
+
+def _check_input_types_valid(self, inputs):
+    return all(isinstance(inputs[name], Input)
+               for name in inputs)
+
+
 class Node:
     """Node in the computation graph, a DAG"""
     def __init__(self, children):
@@ -42,7 +59,7 @@ class Function(Node):
         Args:
             inputs (dict): maps from input name (str) to an Input object.
         """
-        assert self._check_inputs_valid(inputs),\
+        assert _check_input_types_valid(inputs),\
             f"inputs must be either Function or numpy array. Got: {inputs}"
         super().__init__(inputs)
         self._vars = {name:inputs[name] for name in inputs
@@ -52,20 +69,26 @@ class Function(Node):
         self._constants = {name:inputs[name] for name in inputs
                            if isinstance(inputs[name], Constant)}
 
-    def _check_inputs_valid(self, inputs):
-        return all(isinstance(inputs[name], Input)
-                   for name in inputs)
-
     def call(self, **inputs):
         """Function to be overriden"""
         raise NotImplementedError
 
-    def grad(self, inpt):
-        """Returns a dictionary that maps function that can be called to compute
-        the gradient to this function"""
-        raise NotImplementedError
+    def _assign_inputs(self, inputs):
+        """inputs (dict)"""
+        for varname in self._vars:
+            if varname not in inputs:
+                raise ValueError(f"Variable {varname} is not assigned.")
+            self._vars[varname].assign(inputs[varname])
 
-    def __call__(self, **inputs):
+        for param_name in self._params:
+            if param_name in inputs:
+                self._params[param_name].assign(inputs[param_name])
+
+        for const_name in self._constants:
+            if const_name in inputs:
+                raise ValueError("Constants cannot be assigned.")
+
+    def __call__(self, *inputs):
         """The function is called (forward-pass)
 
         Args:
@@ -76,10 +99,30 @@ class Function(Node):
                 be optional); (2) the function throws an exception
                 if not all Variables are assigned a value.
         Returns:
-            Value: an object
-
+            Value: an object that represents a node in the grounded
+                computational graph.
         """
+        if not _check_inputs_instantiated(inputs):
+            raise ValueError("When calling a function, its inputs must be instantiated.\n"\
+                             "The uninstantiated inputs are:\n",
+                             _get_uninstantiated_inputs(inputs))
+        self._assign_inputs(inputs)
+        output = self.call(**inputs)
+        # For most cases, the user when implementing 'call' won't
+        # be bothered by the internal workings of this computation
+        # graph. Therefore, we will wrap the user's output with Value.
+        if isinstance(output, Value):
+            print(f"Warning: output of {type(self)}.call is of type Value."\
+                  "It will be wrapped by another Value.")
+        return Value(inputs, output)
+
+    def _build_grad_fn(self):
         pass
+
+    def grad(self, inpt):
+        """Returns a dictionary that maps function that can be called to compute
+        the gradient to this function"""
+        raise NotImplementedError
 
     @property
     def params(self):
@@ -158,10 +201,10 @@ class Value(Node):
     def __init__(self, inputs, val):
         """
         Args:
-           inputs (dict): maps from name to Input; should be instantiated.
+           inputs (dict-like): maps from name to Input; should be instantiated.
            val (array-like): the actual value
         """
-        assert self._check_inputs_instantiated(inputs),\
+        assert _check_inputs_instantiated(inputs),\
             "The inputs to a Value node must have been instantiated."
 
         # convert inputs to constants, since they are no longer changeable.
@@ -169,7 +212,3 @@ class Value(Node):
 
         super().__init__(_inputs)
         self._value = val
-
-    def _check_inputs_instantiated(self, inputs):
-        return all(inputs[name].instantiated
-                   for name in inputs)
