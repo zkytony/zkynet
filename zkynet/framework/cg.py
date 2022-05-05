@@ -197,6 +197,19 @@ class Node:
     def isleaf(self):
         return len(self._children) == 0
 
+    @property
+    def children(self):
+        return self._children
+
+    def __str__(self):
+        func_str = ""
+        if self._parent is not None and self._parent_input_name is not None:
+            func_str = f"-->{type(self._parent._fun)}[{self._parent_input_name}]"
+        return f"{self.__class__.__name__}({self.value}){func_str}"
+
+    def __repr__(self):
+        return str(self)
+
 
 class InputNode(Node):
     """A leaf node in the computational graph"""
@@ -207,6 +220,7 @@ class InputNode(Node):
     def set_parent(self, parent, parent_input_name):
         self._parent = parent
         self._parent_input_name = parent_input_name
+
 
 
 class FunctionNode(Node):
