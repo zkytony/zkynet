@@ -1,10 +1,10 @@
 # A basic feedforward neural network with
 # tunable parameters, and the backprop
 # training algorithm
-from . import framework as zkyn
+from .function import Function
 import numpy as np
 
-class FCN(zkyn.Function):
+class FCN(Function):
     """
     FCN: fully-connected networks, also called deep
     feedforward neural networks, or multilayer perceptrons.
@@ -36,7 +36,7 @@ class FCN(zkyn.Function):
 
     def __call__(self, x):
         """
-
+        This is the forward pass of the network.
         """
         outputs = []
         inp = x
@@ -64,7 +64,7 @@ class FCN(zkyn.Function):
         result += f"TOTAL PARAMS: {num_params}"
         return result
 
-class LinearLayer(zkyn.Function):
+class LinearLayer(Function):
     """
     A linear layer outputs y = x^T W + b
     where x is (n,1), W is (n,m), and b is (m,1)
@@ -98,18 +98,18 @@ class LinearLayer(zkyn.Function):
         return f"Linear(weights=\n{self._weights}, bias=\n{self._bias})"
 
 
-class Identity(zkyn.Function):
+class Identity(Function):
     """Identity function: just returns itself"""
     def __call__(self, x):
         return x
 
 
-class ReLU(zkyn.Function):
+class ReLU(Function):
     """rectified linear unit g(x) = max{0,x}"""
     def __call__(self, x):
         return np.maximum(x, 0)
 
-class FCNLayer(zkyn.Function):
+class FCNLayer(Function):
     """An FCN layer is a linear layer passed through
     a non-linear function.
 
@@ -119,7 +119,7 @@ class FCNLayer(zkyn.Function):
         """
         Args:
             linear_layer (LinearLayer)
-            g_func (zkyn.Function)
+            g_func (Function)
         """
         self._linear_layer = linear_layer
         self._g_func = g_func
