@@ -30,15 +30,15 @@ class Function:
         """
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
-        assert all(isinstance(param, Parameter)\
-                   or isinstance(param, Constant) for param in params),\
-            f"all objects in 'params' must be of type Parameter or Constant"
-
         self._ordered_input_names = tuple(inp.name for inp in inputs)
         self._inputs = {inp.name: inp for inp in inputs}
-        self._params = {}
-        if params is not None:
-            self._params = {param.name: param for param in params}
+
+        if params is None:
+            params = set()
+        assert all(isinstance(param, Parameter)\
+                   or isinstance(param, Constant) for param in params),\
+                   f"all objects in 'params' must be of type Parameter or Constant"
+        self._params = {param.name: param for param in params}
 
     def param_node(self, name):
         """Get an InputNode for the given parameter;
@@ -51,6 +51,9 @@ class Function:
     @property
     def inputs(self):
         return self._inputs
+
+    def input_name(self, i):
+        return self._ordered_input_names[i]
 
     def call(self, *input_nodes, **call_args):
         """Function to be overriden
@@ -68,7 +71,6 @@ class Function:
         input_nodes = []
         try:
             for i in range(len(self._ordered_input_names)):
-                input_name = self._ordered_input_names[i]
                 input_val = input_vals[i]
                 if not isinstance(input_val, Node):
                     node = InputNode(input_val)
@@ -108,8 +110,8 @@ class Function:
             # wrap it with a new FunctionNode for this function, by convention.
             output_val = output_val.value
         output_node = FunctionNode(self, output_val, input_nodes)
-        for input_name in input_nodes:
-            input_nodes[input_name].set_parent(output_node, input_name)
+        for i in range(len(input_nodes)):
+            input_nodes[i].set_parent(output_node, self.input_name(i))
         return output_node
 
 
@@ -125,6 +127,12 @@ class Input:
     @property
     def value(self):
         return self._value
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.name}, {self.value})"
+
+    def __repr__(self):
+        return str(self)
 
 
 class Variable(Input):
@@ -201,6 +209,10 @@ class Node:
     def children(self):
         return self._children
 
+    def set_parent(self, parent, parent_input_name):
+        self._parent = parent
+        self._parent_input_name = parent_input_name
+
     def __str__(self):
         func_str = ""
         if self._parent is not None and self._parent_input_name is not None:
@@ -217,11 +229,6 @@ class InputNode(Node):
         super().__init__(value, parent=parent,
                          parent_input_name=parent_input_name)
 
-    def set_parent(self, parent, parent_input_name):
-        self._parent = parent
-        self._parent_input_name = parent_input_name
-
-
 
 class FunctionNode(Node):
     """A non-leaf node in the computational graph"""
@@ -234,4 +241,4 @@ class FunctionNode(Node):
         super().__init__(value,
                          children=children,
                          parent=parent,
-                         parent_input_name=paren_input_name)
+                         parent_input_name=parent_input_name)

@@ -18,6 +18,7 @@ class MyTestModel1(cg.Function):
                          params=(cg.Parameter("w", w0),))
 
     def call(self, x):
+        import pdb; pdb.set_trace()
         a = op.add(x, self.param_node("w"))
         b = op.square(x)
         c = op.mult(a, b)
