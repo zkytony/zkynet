@@ -14,11 +14,11 @@ class MyTestModel1(cg.Function):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1):
-        super().__init__(inputs={"x": cg.Variable(),
-                                 "w": cg.Parameter(w0)})
+        super().__init__(inputs=(cg.Variable("x"),),
+                         params=(cg.Parameter("w", w0),))
 
     def call(self, x):
-        a = op.add(x, self.w)
+        a = op.add(x, self.param_node("w"))
         b = op.square(x)
         c = op.mult(a, b)
         return c
@@ -26,11 +26,12 @@ class MyTestModel1(cg.Function):
 
 def test_model1():
     m = MyTestModel1()
-    assert m.param("w") == 1  # initial value
+    assert m._params["w"] == 1  # initial value
 
     # forward pass; constructs computation graph,
     # and stores gradients.
-    result = m(x=np.array([3]))
+    x = np.array([3])
+    result = m(x)
     assert result == (3+1)*3**2
 
     # obtain the gradient of the function output with
