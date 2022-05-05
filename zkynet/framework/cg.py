@@ -6,14 +6,37 @@ A node is either a Function or an Input.
 An Input must be at the end of any path on the
 graph. We can assign value to an Input.
 
-A Function takes in multiple inputs. It
-can be "called" to produce an output, given
+A Function takes in multiple inputs (i.e. nodes). It
+can be "called" to produce an output value, given
 that all inputs have assigned values.
+
+There is no special meaning for edges other
+than connectivity.
 """
 
 import numpy as np
 
-class Function:
+class Node:
+    """Node in the computation graph, a DAG"""
+    def __init__(self, children):
+        """
+        Args:
+            children (dict): mapping from name to Node
+            parents (dict): mapping from name to Node
+        """
+        self._children = children
+
+    @property
+    def isleaf(self):
+        return len(self._children) == 0
+
+
+class Function(Node):
+    """
+    A Function takes inputs (each of type Input) and
+    produces an output (of type Value). The output
+    is only defined when all input variables are assigned.
+    """
     def __init__(self, inputs={}):
         """
         Args:
@@ -21,7 +44,7 @@ class Function:
         """
         assert self._check_inputs_valid(inputs),\
             f"inputs must be either Function or numpy array. Got: {inputs}"
-
+        super().__init__(inputs)
         self._vars = {name:inputs[name] for name in inputs
                       if isinstance(inputs[name], Variable)}
         self._params = {name:inputs[name] for name in inputs
@@ -43,7 +66,19 @@ class Function:
         raise NotImplementedError
 
     def __call__(self, **inputs):
-        """The function is called (forward-pass)"""
+        """The function is called (forward-pass)
+
+        Args:
+            **inputs: mapping from input name to value.
+                This will assign the inputs to this function
+                to the given value. Note that (1) only Variables
+                and Parameters can be assigned (the latter should
+                be optional); (2) the function throws an exception
+                if not all Variables are assigned a value.
+        Returns:
+            Value: an object
+
+        """
         pass
 
     @property
@@ -51,8 +86,10 @@ class Function:
         return self._params
 
 
-class Input:
+class Input(Node):
+    """An Input is a leaf node on the DAG"""
     def __init__(self, input_type):
+        super().__init__({})
         self.input_type = input_type
         self._value = None
         self._grad = None  # stores the gradient
@@ -69,6 +106,11 @@ class Input:
 
     def __repr__(self):
         return str(self)
+
+    @property
+    def instantiated(self):
+        """Returns true if the variable is instantiated."""
+        return self._value is not None
 
 
 class Variable(Input):
@@ -103,3 +145,31 @@ class Constant(Input):
 
     def assign(self, v):
         raise ValueError("Constant value cannot change")
+
+
+class Value(Node):
+    """Think about it as a function but after it is called, so
+    it is "grounded" to the input values. The inputs given
+    will be all converted to constants (separate from the
+    abstract computation graph).
+
+    Note: Value is immutable, and it is NOT designed to
+    be an input to a Function."""
+    def __init__(self, inputs, val):
+        """
+        Args:
+           inputs (dict): maps from name to Input; should be instantiated.
+           val (array-like): the actual value
+        """
+        assert self._check_inputs_instantiated(inputs),\
+            "The inputs to a Value node must have been instantiated."
+
+        # convert inputs to constants, since they are no longer changeable.
+        _inputs = {name: Constant(inputs[name].value)}
+
+        super().__init__(_inputs)
+        self._value = val
+
+    def _check_inputs_instantiated(self, inputs):
+        return all(inputs[name].instantiated
+                   for name in inputs)
