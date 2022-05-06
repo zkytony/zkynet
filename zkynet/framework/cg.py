@@ -113,11 +113,11 @@ class Function:
             # function.  We extract its value, yet need to preserve the computation
             # graph, i.e. output_val will be the child node.
             output_node = FunctionNode(self, output_val.value, [output_val])
-            output_val.set_parent(output_node, "preserve")
+            output_val.add_parent(output_node, "preserve")
         else:
             output_node = FunctionNode(self, output_val, input_nodes)
             for i in range(len(input_nodes)):
-                input_nodes[i].set_parent(output_node, self.input_name(i))
+                input_nodes[i].add_parent(output_node, self.input_name(i))
         return output_node
 
 
@@ -207,6 +207,8 @@ class Node(IDObject):
     """Node in the computation graph, a DAG.
     A node can always be regarded as an instantiation of
     a particular Input to a Function. It carries a value.
+    Since it is a DAG, a node can have multiple children
+    and multiple parents.
 
     We distinguish two node types: InputNode and FunctionNode.
     Don't confuse InputNode with Input; The InputNode
@@ -217,20 +219,20 @@ class Node(IDObject):
     is not a leaf node. Both should be grounded with values.
     The value of the FunctionNode represents the output
     of the function under some InputNode instantiation."""
-    def __init__(self, value, children=None, parent=None, parent_input_name=None):
+    def __init__(self, value, children=None, parents=None):
         """
         Args:
             children (list): list of children nodes of this node
-            parent (FunctionNode): the node of the function that
-                this node is an input for.
-            parent_input_name (str): the name of the input to the
-                parent function that this node corresponds to.
+            parents (dict): maps from FunctionNode (parent) to a string that
+                indicates the name of the input to the parent function that
+                this node corresponds to.
         """
         if children is None:
             children = []
         self._children = children
-        self._parent = parent
-        self._parent_input_name = parent_input_name
+        if parents is None:
+            parents = {}
+        self._parents = parents
         self._value = value
         super().__init__(self.__class__.__name__)
 
@@ -242,26 +244,32 @@ class Node(IDObject):
         return len(self._children) == 0
 
     @property
-    def parent(self):
-        return self._parent
+    def parents(self):
+        return self._parents
 
     @property
-    def parent_input_name(self):
-        return self._parent_input_name
+    def parent_input_name(self, parent):
+        return self._parents[parent]
 
     @property
     def children(self):
         return self._children
 
-    def set_parent(self, parent, parent_input_name):
-        self._parent = parent
-        self._parent_input_name = parent_input_name
+    def add_parent(self, parent, parent_input_name):
+        self._parents[parent] = parent_input_name
 
     def __str__(self):
-        func_str = ""
-        if self._parent is not None and self._parent_input_name is not None:
-            func_str = f"-->{self._parent._fun.name}:{self._parent_input_name}"
-        return f"{self.__class__.__name__}({self.value}){func_str}"
+        parents_str = self._get_parents_str()
+        return f"{self.__class__.__name__}({self.value}){parents_str}"
+
+    def _get_parents_str(self):
+        parents_str = ""
+        if len(self._parents) > 0:
+            parents_str = "-->["
+            for parent, parent_input_name in self._parents.items():
+                parents_str += f"{parent._fun.name}:{parent_input_name};"
+            parents_str += "]"
+        return parents_str
 
     def __repr__(self):
         return str(self)
@@ -269,19 +277,18 @@ class Node(IDObject):
 
 class InputNode(Node):
     """A leaf node in the computational graph"""
-    def __init__(self, name, value, parent=None, parent_input_name=None):
+    def __init__(self, name, value, parents=None):
         """
         Args:
             name: name of the input
         """
-        super().__init__(value, parent=parent,
-                         parent_input_name=parent_input_name)
+        super().__init__(value, parents=parents)
         self.name = name
 
 
 class FunctionNode(Node):
     """A non-leaf node in the computational graph"""
-    def __init__(self, fun, value, children, parent=None, parent_input_name=None):
+    def __init__(self, fun, value, children, parents=None):
         """
         Args:
             fun (Function): the Function this node subsumes.
@@ -289,14 +296,11 @@ class FunctionNode(Node):
         self._fun = fun
         super().__init__(value,
                          children=children,
-                         parent=parent,
-                         parent_input_name=parent_input_name)
+                         parents=parents)
 
     def __str__(self):
-        func_str = ""
-        if self._parent is not None and self._parent_input_name is not None:
-            func_str = f"-->{self._parent._fun.name}[{self._parent_input_name}]"
-        return f"{self.__class__.__name__}<{self._fun.name}>({self.value}){func_str}"
+        parents_str = self._get_parents_str()
+        return f"{self.__class__.__name__}<{self._fun.name}>({self.value}){parents_str}"
 
     @property
     def function(self):

@@ -12,15 +12,12 @@ def _add_node(dot, node):
     return dot.node(node.id, _node_label(node))
 
 def _node_label(node):
-    if node.parent_input_name is not None\
-       and node.parent is not None:
-        if isinstance(node, cg.FunctionNode):
-            node_label = f"{node.function.name}→({node.value})"
-        else:
-            node_label = f"{node.name} ({node.value})"
+
+    if isinstance(node, cg.FunctionNode):
+        node_label = f"{node.function.name}→({node.value})"
     else:
-        if isinstance(node, cg.FunctionNode):
-            node_label = f"{node.function.name} ({node.value})"
+        if len(node.parents) > 0:
+            node_label = f"{node.name} ({node.value})"
         else:
             node_label = f"root ({node.value})"
     return node_label
@@ -43,7 +40,8 @@ def plot_cg(root, save_path="/tmp/cg"):
         _add_node(dot, node)
         for child in node.children:
             if child not in seen:
-                dot.edge(child.id, node.id)
+                for parent in child.parents:
+                    dot.edge(child.id, parent.id)
                 worklist.append(child)
                 seen.add(child)
     print(dot.source)
