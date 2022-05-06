@@ -33,25 +33,18 @@ def plot_cg(root, save_path="/tmp/cg"):
     Args:
         root (cg.Node)
     """
+    dot = graphviz.Digraph(comment=f"Computational Graph for {root.function.name}")
+
     # First get all the nodes and the edges.
-    _all_nodes = set()
-    _all_edges = set()
     worklist = [root]
     seen = {root}
     while len(worklist) > 0:
         node = worklist.pop()
-        _all_nodes.add(node)
+        _add_node(dot, node)
         for child in node.children:
-            _all_edges.add((node, child))
             if child not in seen:
+                dot.edge(child.id, node.id)
                 worklist.append(child)
                 seen.add(child)
-    # Now, add nodes and edges to the dot graph
-    dot = graphviz.Digraph(comment=f"Computational Graph for {root.function.name}")
-    for node in _all_nodes:
-        _add_node(dot, node)
-    for parent, child in _all_edges:
-        dot.edge(child.id, parent.id)
-
     print(dot.source)
     dot.render(f"{save_path}.gv", view=True)
