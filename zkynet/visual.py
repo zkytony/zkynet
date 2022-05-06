@@ -15,9 +15,9 @@ def _node_label(node):
     if node.parent_input_name is not None\
        and node.parent is not None:
         if isinstance(node, cg.FunctionNode):
-            node_label = f"{node.function.name}--->({node.value})"
+            node_label = f"{node.function.name}→({node.value})"
         else:
-            node_label = f"{node.parent_input_name} ({node.value})"
+            node_label = f"{node.name} ({node.value})"
     else:
         if isinstance(node, cg.FunctionNode):
             node_label = f"{node.function.name} ({node.value})"

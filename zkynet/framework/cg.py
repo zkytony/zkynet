@@ -46,7 +46,7 @@ class Function:
         if name not in self._params:
             raise ValueError(f"{name} is not a parameter.")
         param = self._params[name]
-        return InputNode(param.value)
+        return InputNode(name, param.value)
 
     @property
     def name(self):
@@ -77,7 +77,7 @@ class Function:
             for i in range(len(self._ordered_input_names)):
                 input_val = input_vals[i]
                 if not isinstance(input_val, Node):
-                    node = InputNode(input_val)
+                    node = InputNode(self.input_name(i), input_val)
                     input_nodes.append(node)
                 else:
                     input_nodes.append(input_val)
@@ -266,9 +266,14 @@ class Node(IDObject):
 
 class InputNode(Node):
     """A leaf node in the computational graph"""
-    def __init__(self, value, parent=None, parent_input_name=None):
+    def __init__(self, name, value, parent=None, parent_input_name=None):
+        """
+        Args:
+            name: name of the input
+        """
         super().__init__(value, parent=parent,
                          parent_input_name=parent_input_name)
+        self.name = name
 
 
 class FunctionNode(Node):
