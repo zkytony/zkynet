@@ -33,6 +33,7 @@ def test_model1_forward():
     x = 3
     result = m(x)
     assert result.value == 36
+    import pdb; pdb.set_trace()
 
 
 def test_visualize_cg():

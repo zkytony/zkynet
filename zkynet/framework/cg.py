@@ -110,12 +110,14 @@ class Function:
         # Wrap the output value as a FunctionNode, and connect the graph.
         if isinstance(output_val, FunctionNode):
             # "call" returns likely the output of running "call" for some other
-            # function.  The underlying numeric value is taken, yet we need to
-            # wrap it with a new FunctionNode for this function, by convention.
-            output_val = output_val.value
-        output_node = FunctionNode(self, output_val, input_nodes)
-        for i in range(len(input_nodes)):
-            input_nodes[i].set_parent(output_node, self.input_name(i))
+            # function.  We extract its value, yet need to preserve the computation
+            # graph, i.e. output_val will be the child node.
+            output_node = FunctionNode(self, output_val.value, [output_val])
+            output_val.set_parent(output_node, "preserve")
+        else:
+            output_node = FunctionNode(self, output_val, input_nodes)
+            for i in range(len(input_nodes)):
+                input_nodes[i].set_parent(output_node, self.input_name(i))
         return output_node
 
 
