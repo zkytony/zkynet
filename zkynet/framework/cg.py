@@ -142,7 +142,10 @@ class Input:
 
 
 class Variable(Input):
-    """Input variable; you have no control over."""
+    """Input variable; you have no control over.
+    Nevertheless, this can be used to specifying how
+    to validate an assignment to this variable at 'call'
+    time (not yet implemented)."""
     def __init__(self, name):
         super().__init__(name, "variable")
 
