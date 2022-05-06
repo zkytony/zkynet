@@ -19,7 +19,10 @@ def _node_label(node):
         else:
             node_label = f"{node.parent_input_name} ({node.value})"
     else:
-        node_label = f"root ({node.value})"
+        if isinstance(node, cg.FunctionNode):
+            node_label = f"{node.function.name} ({node.value})"
+        else:
+            node_label = f"root ({node.value})"
     return node_label
 
 
@@ -30,7 +33,7 @@ def plot_cg(root, save_path="/tmp/cg"):
     Args:
         root (cg.Node)
     """
-    dot = graphviz.Digraph(comment="Computational Graph")
+    dot = graphviz.Digraph(comment=f"Computational Graph for {root.function.name}")
 
     _add_node(dot, root)
     worklist = [root]
