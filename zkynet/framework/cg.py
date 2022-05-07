@@ -292,6 +292,10 @@ class FunctionNode(Node):
         """
         Args:
             fun (Function): the Function this node subsumes.
+            children (list): list of children nodes of this node;
+                note that order matters; the order of the children
+                should match the order of inputs when calling the
+                underlying function 'fun'.
         """
         self._fun = fun
         super().__init__(value,
@@ -305,3 +309,7 @@ class FunctionNode(Node):
     @property
     def function(self):
         return self._fun
+
+    def grad(self):
+        """computes the gradient of the function
+        with respect to every input and """

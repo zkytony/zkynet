@@ -8,6 +8,9 @@ class Identity(Function):
     def call(self, x):
         return x.value
 
+    def grad(self, var):
+        pass
+
 class Add(Function):
     def __init__(self):
         super().__init__(inputs=(Variable("a"), Variable("b")))
