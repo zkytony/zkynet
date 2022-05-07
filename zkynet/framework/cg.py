@@ -19,7 +19,8 @@ class Function:
     """
     A Function is an abstract template that maps
     inputs (ordered) to an output subject to some
-    internal parameters.
+    internal parameters; the values of these parameters
+    are kept tracked of in the model.
     """
     def __init__(self, inputs, params=None):
         """
@@ -180,7 +181,10 @@ class Constant(Input):
 
 ########### The computation graph components ##########
 class IDObject:
-    """Object with an ID"""
+    """Object with an ID; Note that
+    the IDObject can carry an underlying
+    'referee' which is used for equality
+    comparison and hashing."""
     COUNTER = {}
     def __init__(self, objtype):
         if objtype not in IDObject.COUNTER:
