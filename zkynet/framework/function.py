@@ -3,7 +3,7 @@ A framework to define functions with corresponding,
 dynamically generated computational graph. Gradients
 are computed using automatic differentiation.
 """
-from .. import utils
+
 from .computation_graph import FunctionNode, InputNode
 
 ########## Template objects ###########
@@ -37,7 +37,10 @@ class Function(TemplateObject):
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
         self._ordered_input_names = tuple(inp.name for inp in inputs)
-        self._inputs = {inp.name: inp for inp in inputs}
+        self._inputs = {}
+        for inp in inputs:
+            inp.fun = self
+            self._inputs[inp.name] = inp
 
         if params is None:
             params = set()
