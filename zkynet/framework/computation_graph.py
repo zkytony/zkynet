@@ -3,6 +3,7 @@ A framework to define functions with corresponding,
 dynamically generated computational graph. Gradients
 are computed using automatic differentiation.
 """
+from .. import utils
 
 ########## Template objects ###########
 class TemplateObject:
@@ -45,15 +46,29 @@ class Function(TemplateObject):
         assert all(isinstance(param, Parameter)\
                    or isinstance(param, Constant) for param in params),\
                    f"all objects in 'params' must be of type Parameter or Constant"
-        self._params = {param.name: param for param in params}
+        self._params = {}
+        for param in params:
+            param.fun = self
+            self._params[param.name] = param
+
+        # the call id of the call that is happening now
+        self._current_call_id = None
 
     def param_node(self, name):
         """Get an InputNode for the given parameter;
         Used to construct computational graph."""
         if name not in self._params:
             raise ValueError(f"{name} is not a parameter.")
+        assert self._current_call_id is not None, "call id is not set!"
         param = self._params[name]
-        return InputNode(name, param.value)
+        return InputNode(self._current_call_id, param, param.value)
+
+    def param_val(self, n):
+        return self._params[n].value
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def functional_name(self):
@@ -61,6 +76,22 @@ class Function(TemplateObject):
         The function's name
         """
         return self.name
+
+    def _set_current_call_id(self, call_id):
+        """
+        Sets the current call id, if it is not yet set.
+        Otherwise, checks if the current call id matches
+        the given one. Throws an exception if not. This is
+        because this function is expected to be called only
+        while one function call is being made.
+
+        User should not call this function.
+        """
+        if self._current_call_id is not None\
+           and self._current_call_id != call_id:
+            raise ValueError(f"Unexpected behavior: Current call id {self._current_call_id}"\
+                             "is different from given call id {call_id}.")
+        self._current_call_id = call_id
 
     @property
     def inputs(self):
@@ -81,13 +112,18 @@ class Function(TemplateObject):
         raise NotImplementedError
 
     def _construct_input_nodes(self, *input_vals):
-        """input nodes to this FunctionNode."""
+        """input nodes to this FunctionNode.
+        Note: assume self._current_call_id is assigned"""
+        assert self._current_call_id is not None, "call id is not set!"
         input_nodes = []
         try:
             for i in range(len(self._ordered_input_names)):
                 input_val = input_vals[i]
+                input_name = self._ordered_input_names[i]
                 if not isinstance(input_val, Node):
-                    node = InputNode(self.input_name(i), input_val)
+                    node = InputNode(self._current_call_id,
+                                     self.inputs[input_name],
+                                     input_val)
                     input_nodes.append(node)
                 else:
                     input_nodes.append(input_val)
@@ -119,8 +155,10 @@ class Function(TemplateObject):
             FunctionNode: an object that represents a non-leaf node
                 in the grounded computational graph.
         """
-        _call_id = "{}-call{}".format(type(self), utils.unique_id())
-        input_nodes = self._construct_input_nodes(call_id, *input_vals)
+        if self._current_call_id is None:
+            self._current_call_id = "{}-call{}".format(type(self), utils.unique_id())
+
+        input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes, **call_args)
 
         # Wrap the output value as a FunctionNode, and connect the graph.
@@ -128,12 +166,15 @@ class Function(TemplateObject):
             # "call" returns likely the output of running "call" for some other
             # function.  We extract its value, yet need to preserve the computation
             # graph, i.e. output_val will be the child node.
-            output_node = FunctionNode(self, output_val.value, [output_val])
+            output_node = FunctionNode(self._current_call_id, self,
+                                       output_val.value, [output_val])
             output_val.add_parent(output_node, "preserve")
         else:
-            output_node = FunctionNode(self, output_val, input_nodes)
+            output_node = FunctionNode(self._current_call_id, self,
+                                       output_val, input_nodes)
             for i in range(len(input_nodes)):
                 input_nodes[i].add_parent(output_node, self.input_name(i))
+        self._current_call_id = None   # call has finished
         return output_node
 
 
@@ -187,7 +228,7 @@ class Input(TemplateObject):
         The name that identifies both the function and the role
         this input plays to that function.
         """
-        if self._func is None:
+        if self._fun is None:
             raise ValueError("Input's function is NOT set. No functional name.")
         return f"{self._fun.name}-{self.name}"
 
@@ -291,7 +332,8 @@ class Node(IDObject):
         """
         Args:
             call_id (str): the ID of the function call for which this
-                node (or computational graph) is constructed.
+                node (or computational graph) is constructed. Note that
+                all nodes on the same graph should have the same call id.
             ref (Function or Input): a reference to a Function or
                 an Input object that this Node instantiates for.
             children (list): list of children nodes of this node
@@ -299,6 +341,8 @@ class Node(IDObject):
                 indicates the name of the input to the parent function that
                 this node corresponds to.
         """
+        self._call_id = call_id
+        self._ref = ref
         if children is None:
             children = []
         self._children = children
@@ -309,11 +353,19 @@ class Node(IDObject):
         _id = f"{self.__class__.__name__}_{call_id}_{ref.functional_name}"
         super().__init__(_id)
 
+    def __hash__(self):
+        return hash(self._id)
+
     def __eq__(self, other):
         if isinstance(other, Node):
             return self.id == other.id\
                 and self.value == other.value
         return False
+
+    @property
+    def ref(self):
+        """reference to TemplateObject this node instantiates for."""
+        return self._ref
 
     @property
     def value(self):
@@ -346,7 +398,7 @@ class Node(IDObject):
         if len(self._parents) > 0:
             parents_str = "-->["
             for parent, parent_input_name in self._parents.items():
-                parents_str += f"{parent._fun.name}:{parent_input_name};"
+                parents_str += f"{parent.function.name}:{parent_input_name};"
             parents_str += "]"
         return parents_str
 
@@ -357,12 +409,12 @@ class Node(IDObject):
 class InputNode(Node):
     """A leaf node in the computational graph"""
     def __init__(self, call_id, inpt, value, parents=None):
-        """
-        Args:
-            name: name of the input
-        """
+        assert isinstance(inpt, Input)
         super().__init__(call_id, inpt, value, parents=parents)
-        self.name = name
+
+    @property
+    def input(self):
+        return self._ref
 
 
 class FunctionNode(Node):
@@ -376,19 +428,19 @@ class FunctionNode(Node):
                 should match the order of inputs when calling the
                 underlying function 'fun'.
         """
-        assert isinstance(fun, )
-        self._fun = fun
+        assert isinstance(fun, Function)
+        fun._set_current_call_id(call_id)  # make sure the call id is in sync
         super().__init__(call_id, fun, value,
                          children=children,
                          parents=parents)
 
     def __str__(self):
         parents_str = self._get_parents_str()
-        return f"{self.__class__.__name__}<{self._fun.name}>({self.value}){parents_str}"
+        return f"{self.__class__.__name__}<{self.function.name}>({self.value}){parents_str}"
 
     @property
     def function(self):
-        return self._fun
+        return self._ref
 
     def grad(self):
         """computes the gradient of the function

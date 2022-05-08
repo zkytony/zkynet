@@ -30,7 +30,7 @@ def main():
             test_module.run()
         except Exception as ex:
             sys.stdout = old_stdout
-            print(traceback.format_exc())
+            print(typ.red(traceback.format_exc()))
 
 if __name__ == "__main__":
     main()

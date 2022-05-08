@@ -2,7 +2,7 @@ import os, sys
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
-from zkynet.framework import cg
+from zkynet.framework import cg, op
 
 description="testing CG framework"
 
@@ -14,7 +14,8 @@ class MyTestModel1(cg.Function):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1):
-        super().__init__(inputs=(cg.Variable("x"),),
+        super().__init__("mymodel1",
+                         inputs=(cg.Variable("x"),),
                          params=(cg.Parameter("w", w0),))
 
     def call(self, x):

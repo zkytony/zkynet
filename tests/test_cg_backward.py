@@ -3,7 +3,6 @@ ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
 from zkynet.framework import cg, op
-from zkynet.visual import plot_cg
 import numpy as np
 
 description="testing backprop gradient calculations for the computational graph framework"
@@ -16,7 +15,8 @@ class MyTestModel1(cg.Function):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1):
-        super().__init__(inputs=(cg.Variable("x"),),
+        super().__init__("model1",
+                         inputs=(cg.Variable("x"),),
                          params=(cg.Parameter("w", w0),))
 
     def call(self, x):

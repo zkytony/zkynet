@@ -17,7 +17,7 @@ def _node_label(node):
         node_label = f"{node.function.name}→({node.value})"
     else:
         if len(node.parents) > 0:
-            node_label = f"{node.name} ({node.value})"
+            node_label = f"{node.input.name} ({node.value})"
         else:
             node_label = f"root ({node.value})"
     return node_label

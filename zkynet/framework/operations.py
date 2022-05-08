@@ -3,7 +3,7 @@ from .computation_graph import Function, Variable
 
 class Identity(Function):
     def __init__(self):
-        super().__init__(inputs=(Variable("x"),))
+        super().__init__("Identity", inputs=(Variable("x"),))
 
     def call(self, x):
         return x.value
@@ -13,7 +13,7 @@ class Identity(Function):
 
 class Add(Function):
     def __init__(self):
-        super().__init__(inputs=(Variable("a"), Variable("b")))
+        super().__init__("Add", inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
         return a.value + b.value
@@ -21,7 +21,7 @@ class Add(Function):
 
 class Multiply(Function):
     def __init__(self):
-        super().__init__(inputs=(Variable("a"), Variable("b")))
+        super().__init__("Multiply", inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
         return a.value * b.value
@@ -29,7 +29,7 @@ class Multiply(Function):
 
 class Square(Function):
     def __init__(self):
-        super().__init__(inputs=(Variable("x"),))
+        super().__init__("Square", inputs=(Variable("x"),))
 
     def call(self, x):
         return np.square(x.value)
