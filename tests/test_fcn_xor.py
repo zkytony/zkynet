@@ -8,6 +8,8 @@ sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 from zkynet.models.fcn import FCN, FCNLayer, LinearLayer, ReLU, Identity
 import numpy as np
 
+description="[OUTDATED] testing building a FCN"
+
 def test_random():
     """the weights are random"""
     np.random.seed(4)
@@ -36,6 +38,9 @@ def test_correct():
                             [0,0],
                             [1,1]])))
 
-if __name__ == "__main__":
+def run():
     test_random()
     test_correct()
+
+if __name__ == "__main__":
+    run()
