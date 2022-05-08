@@ -468,3 +468,22 @@ def get_input_nodes(root):
                 worklist.append(child)
                 seen.add(child)
     return input_nodes
+
+def get_all_nodes(root):
+    """
+    Args:
+        root (Node): the root on a (sub) computational graph
+    Output:
+        set: a set of nodes of type InputNode
+    """
+    worklist = [root]
+    seen = {root}
+    all_nodes = set()
+    while len(worklist) > 0:
+        node = worklist.pop()
+        all_nodes.add(node)
+        for child in node.children:
+            if child not in seen:
+                worklist.append(child)
+                seen.add(child)
+    return all_nodes

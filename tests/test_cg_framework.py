@@ -36,6 +36,13 @@ def test_call_integrity():
     assert result1 != result2
     assert result1.id != result2.id
 
+    # Make sure all nodes in one graph have the
+    # same call id
+    all_nodes1 = cg.get_all_nodes(result1)
+    for n1 in all_nodes1:
+        for n2 in all_nodes1:
+            assert n1._call_id == n2._call_id
+
 
 ######## Equality tests ########################
 # Test: Equality of nodes. Two Node objects are equal if:
