@@ -2,11 +2,11 @@ import os, sys
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
-import zkynet.framework as zn
+from zkynet.framework import cg
 
 description="testing CG framework"
 
-class MyTestModel1(zn.Function):
+class MyTestModel1(cg.Function):
     """A rather simple function that represents:
 
     f(x,w) = (x+w)*x^2
@@ -28,6 +28,12 @@ class MyTestModel1(zn.Function):
 # two different computational graphs even
 # if the graph structure are the same & nodes
 # have the same values.
+def test_call_integrity():
+    m = MyTestModel1()
+    result1 = m(3)
+    result2 = m(3)
+    assert result1 != result2
+    assert result1.id != result2.id
 
 
 ######## Equality tests ########################
@@ -41,3 +47,9 @@ class MyTestModel1(zn.Function):
 # - they correspond to the same template (Input or Function)
 def test_Node_equality():
     pass
+
+def run():
+    test_call_integrity()
+
+if __name__ == "__main__":
+    run()

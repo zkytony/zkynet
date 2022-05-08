@@ -1,5 +1,5 @@
 import numpy as np
-from .function import Function, Variable
+from .computation_graph import Function, Variable
 
 class Identity(Function):
     def __init__(self):
