@@ -129,18 +129,18 @@ class Node(IDObject):
 
 class InputNode(Node):
     """A leaf node in the computational graph"""
-    def __init__(self, name, value, parents=None):
+    def __init__(self, call_id, inpt, value, parents=None):
         """
         Args:
             name: name of the input
         """
-        super().__init__(value, parents=parents)
+        super().__init__(call_id, inpt, value, parents=parents)
         self.name = name
 
 
 class FunctionNode(Node):
     """A non-leaf node in the computational graph"""
-    def __init__(self, fun, value, children, parents=None):
+    def __init__(self, call_id, fun, value, children, parents=None):
         """
         Args:
             fun (Function): the Function this node subsumes.
@@ -149,8 +149,9 @@ class FunctionNode(Node):
                 should match the order of inputs when calling the
                 underlying function 'fun'.
         """
+        assert isinstance(fun, )
         self._fun = fun
-        super().__init__(value,
+        super().__init__(call_id, fun, value,
                          children=children,
                          parents=parents)
 
