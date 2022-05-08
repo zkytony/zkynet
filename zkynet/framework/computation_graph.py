@@ -4,17 +4,10 @@ A framework to represent computational graph.
 
 ########### The computation graph components ##########
 class IDObject:
-    """Object with an ID; Note that
-    the IDObject can carry an underlying
-    'referee' which is used for equality
-    comparison and hashing."""
-    COUNTER = {}
-    def __init__(self, objtype):
-        if objtype not in IDObject.COUNTER:
-            IDObject.COUNTER[objtype] = 0
-        next_id = IDObject.COUNTER[objtype]
-        self._id = f"{objtype}_{next_id}"
-        IDObject.COUNTER[objtype] += 1
+    """Object with an ID; Two objects
+    are the same if they have the same id."""
+    def __init__(self, _id):
+        self._id = _id
 
     def __hash__(self):
         return hash(self._id)
@@ -54,10 +47,26 @@ class Node(IDObject):
 
     because I want to view the input as the child and
     the output as the parent (that feels more natural)
+
+    Note on equality:
+
+       Two Node objects are equal if:
+       - they have the same ID
+       - they have the same value
+
+       Two Node objects have the same ID if:
+       - they belong to the same computational graph (i.e. _same_ function
+            call; note one function call corresponds to one computational graph)
+       - they instantiate the same object (Input or Function),
+            i.e. they have the same 'ref' (identified by the 'functional name')
     """
-    def __init__(self, value, children=None, parents=None):
+    def __init__(self, call_id, ref, value, children=None, parents=None):
         """
         Args:
+            call_id (str): the ID of the function call for which this
+                node (or computational graph) is constructed.
+            ref (Function or Input): a reference to a Function or
+                an Input object that this Node instantiates for.
             children (list): list of children nodes of this node
             parents (dict): maps from FunctionNode (parent) to a string that
                 indicates the name of the input to the parent function that
@@ -70,7 +79,14 @@ class Node(IDObject):
             parents = {}
         self._parents = parents
         self._value = value
-        super().__init__(self.__class__.__name__)
+        _id = f"{self.__class__.__name__}_{call_id}_{ref.functional_name}"
+        super().__init__(_id)
+
+    def __eq__(self, other):
+        if isinstance(other, Node):
+            return self.id == other.id\
+                and self.value == other.value
+        return False
 
     @property
     def value(self):

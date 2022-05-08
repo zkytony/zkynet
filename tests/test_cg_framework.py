@@ -23,6 +23,13 @@ class MyTestModel1(zn.Function):
         c = op.mult(a, b)
         return c
 
+######## Integrity tests ######################
+# two calls of the same function results in
+# two different computational graphs even
+# if the graph structure are the same & nodes
+# have the same values.
+
+
 ######## Equality tests ########################
 # Test: Equality of nodes. Two Node objects are equal if:
 # - they have the same ID

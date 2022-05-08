@@ -3,22 +3,37 @@ A framework to define functions with corresponding,
 dynamically generated computational graph. Gradients
 are computed using automatic differentiation.
 """
+from .. import utils
+from .computation_graph import FunctionNode, InputNode
 
 ########## Template objects ###########
-class Function:
+class TemplateObject:
+    @property
+    def functional_name(self):
+        """
+        The name that identifies the ROLE this template
+        object plays in the definition of a function; For example,
+        if self is an Input, then this is the name that identifies
+        both the function and the role this input plays to that function.
+        """
+        raise NotImplementedError
+
+
+class Function(TemplateObject):
     """
     A Function is an abstract template that maps
     inputs (ordered) to an output subject to some
     internal parameters; the values of these parameters
     are kept tracked of in the model.
     """
-    def __init__(self, inputs, params=None):
+    def __init__(self, name, inputs, params=None):
         """
         Args:
             inputs (tuple): a tuple of ordered inputs, each a Variable.
             params (list/set-like): parameters, either a Parameter or a Constant.
                 order does not matter
         """
+        self._name = name
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
         self._ordered_input_names = tuple(inp.name for inp in inputs)
@@ -40,8 +55,11 @@ class Function:
         return InputNode(name, param.value)
 
     @property
-    def name(self):
-        return self.__class__.__name__
+    def functional_name(self):
+        """
+        The function's name
+        """
+        return self.name
 
     @property
     def inputs(self):
@@ -83,6 +101,11 @@ class Function:
         The input_vals will be converted (if not already)
         to a Node object.
 
+        Note: we enforce that two calls of the same function
+        results in two different computational graphs even
+        if the graph structure are the same & nodes
+        have the same values.
+
         Args:
             *input_vals: each input is the value of an input
                 that defines this function. Order matters.
@@ -95,7 +118,8 @@ class Function:
             FunctionNode: an object that represents a non-leaf node
                 in the grounded computational graph.
         """
-        input_nodes = self._construct_input_nodes(*input_vals)
+        _call_id = "{}-call{}".format(type(self), utils.unique_id())
+        input_nodes = self._construct_input_nodes(call_id, *input_vals)
         output_val = self.call(*input_nodes, **call_args)
 
         # Wrap the output value as a FunctionNode, and connect the graph.
@@ -112,14 +136,26 @@ class Function:
         return output_node
 
 
-class Input:
+class Input(TemplateObject):
     """An Input is an abstract template
     for an input to a function, but without
     a value."""
     def __init__(self, name, input_type):
+        """
+        Args:
+            name (str): name of this input (e.g. 'x'),
+                should indicate its role in the function
+                that uses it.
+            input_type (str): identifies the type of input,
+                for example 'variable' means it's based on
+                observations, and 'parameter' means it is
+                a function's self-maintained value.
+        """
         self.name = name
         self.input_type = input_type
         self._value = None
+        # Should be set upon the corresponding Function's __init__
+        self._fun = None
 
     @property
     def value(self):
@@ -130,6 +166,29 @@ class Input:
 
     def __repr__(self):
         return str(self)
+
+    @property
+    def fun(self):
+        """the function that this input is for"""
+        return self._fun
+
+    @fun.setter
+    def fun(self, f):
+        if self._fun is not None:
+            raise ValueError("Input's function is already set.")
+        if not isinstance(f, Function):
+            raise TypeError("argument 'f' must be of type Function")
+        self._fun = f
+
+    @property
+    def functional_name(self):
+        """
+        The name that identifies both the function and the role
+        this input plays to that function.
+        """
+        if self._func is None:
+            raise ValueError("Input's function is NOT set. No functional name.")
+        return f"{self._fun.name}-{self.name}"
 
 
 class Variable(Input):
