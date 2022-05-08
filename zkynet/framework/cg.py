@@ -222,7 +222,16 @@ class Node(IDObject):
     The InputNode is a leaf node, while the FunctionNode
     is not a leaf node. Both should be grounded with values.
     The value of the FunctionNode represents the output
-    of the function under some InputNode instantiation."""
+    of the function under some InputNode instantiation.
+
+    Note: the notion of 'child' and 'parent' might be
+    reversed to some people. Here, we mean:
+
+       child --> parent
+
+    because I want to view the input as the child and
+    the output as the parent (that feels more natural)
+    """
     def __init__(self, value, children=None, parents=None):
         """
         Args:
