@@ -9,7 +9,7 @@ import time
 
 description="testing forward construction for the computational graph framework"
 
-class MyTestModel1(cg.Function):
+class MyTestModel1(cg.Module):
     """A rather simple function that represents:
 
     f(x,w) = (x+w)*x^2
@@ -52,7 +52,7 @@ def test_visualize_cg():
     # and stores gradients.
     x = np.array([3])
     result = m(x)
-    plot_cg(result)
+    plot_cg(result.root)
 
 
 def run():

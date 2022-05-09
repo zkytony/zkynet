@@ -7,7 +7,7 @@ import numpy as np
 
 description="testing backprop gradient calculations for the computational graph framework"
 
-class MyTestModel1(cg.Function):
+class MyTestModel1(cg.Module):
     """A rather simple function that represents:
 
     f(x,w) = (x+w)*x^2
