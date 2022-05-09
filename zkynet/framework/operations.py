@@ -1,3 +1,6 @@
+"""
+Hard-coded operations
+"""
 import numpy as np
 from .computation_graph import Operator, Variable
 
