@@ -16,12 +16,11 @@ class MyTestModel1(cg.Module):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1):
-        super().__init__("mymodel1",
-                         inputs=(cg.Variable("x"),),
+        super().__init__(inputs=(cg.Variable("x"),),
                          params=(cg.Parameter("w", w0),))
 
     def call(self, x):
-        a = op.add(x, self.param_node("w"))
+        a = op.add(x, self.param("w"))
         b = op.square(x)
         c = op.mult(a, b)
         return c

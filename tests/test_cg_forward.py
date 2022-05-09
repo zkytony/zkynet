@@ -66,7 +66,7 @@ def test_visualize_cg():
 def test_visualize_CompositeModel_NoWeightSharing_DifferentInputs():
     m = CompositeModel_NoWeightSharing_DifferentInputs()
     result = m(3, 4)
-    plot_cg(result.root, quiet=False)
+    plot_cg(result.root, quiet=True)
 
 
 def run():
