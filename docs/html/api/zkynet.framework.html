@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zkynet.framework package &mdash; zkynet  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> zkynet
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">zkynet.framework package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-zkynet.framework.computation_graph">zkynet.framework.computation_graph module</a></li>
+<li><a class="reference internal" href="#module-zkynet.framework.operations">zkynet.framework.operations module</a></li>
+<li><a class="reference internal" href="#module-zkynet.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">zkynet</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>zkynet.framework package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/zkynet.framework.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="zkynet-framework-package">
+<h1>zkynet.framework package<a class="headerlink" href="#zkynet-framework-package" title="Permalink to this headline"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</section>
+<section id="module-zkynet.framework.computation_graph">
+<span id="zkynet-framework-computation-graph-module"></span><h2>zkynet.framework.computation_graph module<a class="headerlink" href="#module-zkynet.framework.computation_graph" title="Permalink to this headline"></a></h2>
+<p>A framework to define functions with corresponding,
+dynamically generated computational graph. Gradients
+are computed using automatic differentiation.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Constant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Constant" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Input" title="zkynet.framework.computation_graph.Input"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Input</span></code></a></p>
+<p>Its value should not change; could
+be used to specify configuration of a
+function (e.g. kernel size of convolution)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Constant.assign">
+<span class="sig-name descname"><span class="pre">assign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Constant.assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Constant.assign" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Function" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.TemplateObject" title="zkynet.framework.computation_graph.TemplateObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.TemplateObject</span></code></a></p>
+<p>A Function is an abstract template that maps
+inputs (ordered) to an output subject to some
+internal parameters; the values of these parameters
+are kept tracked of in the model.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">input_nodes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">call_args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Function.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Function.call" title="Permalink to this definition"></a></dt>
+<dd><p>Function to be overriden</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*input_nodes</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – nodes with values
+that are inputs to this function
+on the computation graph.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>a OperatorNode, a number or array-like.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function.functional_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">functional_name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Function.functional_name" title="Permalink to this definition"></a></dt>
+<dd><p>Function name without id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function.input_name">
+<span class="sig-name descname"><span class="pre">input_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Function.input_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Function.input_name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function.inputs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inputs</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Function.inputs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Function.name" title="Permalink to this definition"></a></dt>
+<dd><p>The variable name of a function should be
+thought of as the variable that represents
+the function’s output. Two Functions that
+represent two different variables have different
+names; But they share the same “functional name”</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Function.param">
+<span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Function.param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Function.param" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the Parameter corresponding to
+the given short_name, used when initializing
+this Function.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.FunctionCallManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">FunctionCallManager</span></span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#FunctionCallManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.FunctionCallManager" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>In order to enforce independence between computational
+graphs from different calls, FunctionCallManager will
+maintain the call ID of the current call, which is assigned
+to all nodes that are created during the call.</p>
+<p>It will clear the call ID if the call to the trigger
+function is finished (the trigger function is the first
+function that is called, which is likely a user-defined
+model).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.FunctionCallManager.call_begin">
+<span class="sig-name descname"><span class="pre">call_begin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#FunctionCallManager.call_begin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.FunctionCallManager.call_begin" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.FunctionCallManager.call_end">
+<span class="sig-name descname"><span class="pre">call_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#FunctionCallManager.call_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.FunctionCallManager.call_end" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.IDObject">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">IDObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#IDObject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.IDObject" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Object with an ID; Two objects
+are the same if they have the same id.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.IDObject.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.IDObject.id" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Input" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.TemplateObject" title="zkynet.framework.computation_graph.TemplateObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.TemplateObject</span></code></a></p>
+<p>An Input is an abstract template
+for an input to a function, but without
+a value.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input.fun">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fun</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Input.fun" title="Permalink to this definition"></a></dt>
+<dd><p>the function that this input is for</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input.functional_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">functional_name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Input.functional_name" title="Permalink to this definition"></a></dt>
+<dd><p>The functional name that identifies both the function and the role
+this input plays to that function.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Input.name" title="Permalink to this definition"></a></dt>
+<dd><p>Name that represents the variable after being assigned to a function</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input.short_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">short_name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Input.short_name" title="Permalink to this definition"></a></dt>
+<dd><p>The short name given at construction that does not
+uniquely identify this Input, but does identify this
+input with respect to its Function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input.to_node">
+<span class="sig-name descname"><span class="pre">to_node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Input.to_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Input.to_node" title="Permalink to this definition"></a></dt>
+<dd><p>convert to InputNode; assuming this is called during a
+function call (so there would be a call id assigned to this
+InputNode)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Input.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Input.value" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.InputNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">InputNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">call_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inpt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#InputNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.InputNode" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Node</span></code></a></p>
+<p>A leaf node in the computational graph</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.InputNode.input">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.InputNode.input" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Module">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Module" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Function" title="zkynet.framework.computation_graph.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Function</span></code></a></p>
+<p>A Module is a function that is intended to
+be user-defined, complex functions whose
+forward call consists of operators and other
+modules. The gradient of this function is
+automatically computed using autodiff.</p>
+<p>There is a flat grounded computational graph
+corresponding to a module that is created when
+the module is called.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.ModuleGraph">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">ModuleGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">call_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#zkynet.framework.computation_graph.Module" title="zkynet.framework.computation_graph.Module"><span class="pre">zkynet.framework.computation_graph.Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#zkynet.framework.computation_graph.OperatorNode" title="zkynet.framework.computation_graph.OperatorNode"><span class="pre">zkynet.framework.computation_graph.OperatorNode</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#ModuleGraph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.ModuleGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A ModuleGraph is a computational graph that
+is grounded when a Module is called. It stores
+a flat computational graph (by ‘flat’ we mean
+that its internal OperatorNodes should only be
+Operators.)</p>
+<p>Note that since a Module’s call may involve
+calling another module, we don’t actually
+create a graph for that module. We only care
+about the trigger function (i.e. the first Module),
+similar to FunctionCallManager.</p>
+<p>Since the actual graph is captured by a Node,
+this class is very simplistic, but it does serve
+an important use.</p>
+<p>This object is assumed to be immutable</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.ModuleGraph.call_id">
+<span class="sig-name descname"><span class="pre">call_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#zkynet.framework.computation_graph.ModuleGraph.call_id" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.ModuleGraph.module">
+<span class="sig-name descname"><span class="pre">module</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#zkynet.framework.computation_graph.Module" title="zkynet.framework.computation_graph.Module"><span class="pre">zkynet.framework.computation_graph.Module</span></a></em><a class="headerlink" href="#zkynet.framework.computation_graph.ModuleGraph.module" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.ModuleGraph.root">
+<span class="sig-name descname"><span class="pre">root</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#zkynet.framework.computation_graph.OperatorNode" title="zkynet.framework.computation_graph.OperatorNode"><span class="pre">zkynet.framework.computation_graph.OperatorNode</span></a></em><a class="headerlink" href="#zkynet.framework.computation_graph.ModuleGraph.root" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.ModuleGraph.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.ModuleGraph.value" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">call_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">children</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Node" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.IDObject" title="zkynet.framework.computation_graph.IDObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.IDObject</span></code></a></p>
+<p>Node in the computation graph, a DAG.
+A node can always be regarded as an instantiation of
+a particular Input to a Function. It carries a value.
+Since it is a DAG, a node can have multiple children
+and multiple parents.</p>
+<p>We distinguish two node types: InputNode and OperatorNode.
+Don’t confuse InputNode with Input; The InputNode
+literally refers to a leaf node on the DAG, while Input
+is just a placeholder of input in a Function template.</p>
+<p>The InputNode is a leaf node, while the OperatorNode
+is not a leaf node. Both should be grounded with values.
+The value of the OperatorNode represents the output
+of the function (specifically, an Operator) under
+some InputNode instantiation.</p>
+<p>Note: the notion of ‘child’ and ‘parent’ might be
+reversed to some people. Here, we mean:</p>
+<blockquote>
+<div><p>child –&gt; parent</p>
+</div></blockquote>
+<p>because I want to view the input as the child and
+the output as the parent (that feels more natural)</p>
+<p>Note on equality:</p>
+<blockquote>
+<div><p>Two Node objects are equal if:
+- they have the same ID
+- they have the same value</p>
+<p>Two Node objects have the same ID if:
+- they belong to the same computational graph (i.e. _same_ function</p>
+<blockquote>
+<div><p>call; note one function call corresponds to one computational graph)</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>they instantiate the same object (Input or Function),</dt><dd><p>i.e. they have the same ‘ref’ (identified by the ‘functional name’)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>Note on restricting non-leaf nodes to OperatorNodes:</p>
+<blockquote>
+<div><p>Our idea of an Operator is a Function with a hard-coded
+differentiation function. This makes up the “flat”
+computational graph, which is all that we need to properly
+compute gradients.</p>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.add_parent">
+<span class="sig-name descname"><span class="pre">add_parent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_input_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Node.add_parent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Node.add_parent" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.children">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Node.children" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.isleaf">
+<span class="sig-name descname"><span class="pre">isleaf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Node.isleaf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Node.isleaf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.parent_input_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parent_input_name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Node.parent_input_name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.parents">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parents</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Node.parents" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.ref">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ref</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Node.ref" title="Permalink to this definition"></a></dt>
+<dd><p>reference to TemplateObject this node instantiates for.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Node.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.Node.value" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Operator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Operator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Operator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Operator" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Function" title="zkynet.framework.computation_graph.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Function</span></code></a></p>
+<p>An operator is a function that we intend to
+hard code its derivatives. For such functions,
+we expect that the output of “call” should
+be a number, or array-like, instead of a
+OperatorNode. That means, implementation
+of an Operator’s forward pass does not depend
+or use other operators. (Note that __call__
+still, as defined, returns a Node object.)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.OperatorNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">OperatorNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">call_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">children</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#OperatorNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.OperatorNode" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Node</span></code></a></p>
+<p>A non-leaf node in the computational graph</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.OperatorNode.grad">
+<span class="sig-name descname"><span class="pre">grad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#OperatorNode.grad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.OperatorNode.grad" title="Permalink to this definition"></a></dt>
+<dd><p>computes the gradient of the function
+with respect to every input and</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.OperatorNode.operator">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">operator</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.OperatorNode.operator" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Parameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Input" title="zkynet.framework.computation_graph.Input"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Input</span></code></a></p>
+<p>Model parameter; you HAVE control over.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.TemplateObject">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">TemplateObject</span></span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#TemplateObject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.TemplateObject" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.TemplateObject.functional_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">functional_name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.TemplateObject.functional_name" title="Permalink to this definition"></a></dt>
+<dd><p>The name that identifies the ROLE this template
+object plays in the definition of a function; For example,
+if self is an Input, then this is the name that identifies
+both the function and the role this input plays to that function.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.TemplateObject.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#zkynet.framework.computation_graph.TemplateObject.name" title="Permalink to this definition"></a></dt>
+<dd><p>The string that identifies the VARAIBLE name (or ENTITY)
+that this template object represents. For example,
+we could have two Function objects that represent
+the same function but we care about their outputs
+as separate variables. Then, these two Function objects
+should have the same ‘functional_name’ but different
+‘name’.</p>
+<p>Assumption: ‘name’ should not contain any dot ‘.’ character.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Variable">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">Variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Variable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Variable" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Input" title="zkynet.framework.computation_graph.Input"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Input</span></code></a></p>
+<p>Input variable; you have no control over.
+Nevertheless, this can be used to specifying how
+to validate an assignment to this variable at ‘call’
+time (not yet implemented).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.get_all_nodes">
+<span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">get_all_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#get_all_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.get_all_nodes" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>root</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – the root on a (sub) computational graph</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>set: a set of nodes of type InputNode</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.get_input_nodes">
+<span class="sig-prename descclassname"><span class="pre">zkynet.framework.computation_graph.</span></span><span class="sig-name descname"><span class="pre">get_input_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#get_input_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.get_input_nodes" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>root</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – the root on a (sub) computational graph</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>set: a set of nodes of type InputNode</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-zkynet.framework.operations">
+<span id="zkynet-framework-operations-module"></span><h2>zkynet.framework.operations module<a class="headerlink" href="#module-zkynet.framework.operations" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Add">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">Add</span></span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Add" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Operator" title="zkynet.framework.computation_graph.Operator"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Operator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Add.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Add.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Add.call" title="Permalink to this definition"></a></dt>
+<dd><p>Function to be overriden</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*input_nodes</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – nodes with values
+that are inputs to this function
+on the computation graph.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>a OperatorNode, a number or array-like.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Identity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">Identity</span></span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Identity" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Operator" title="zkynet.framework.computation_graph.Operator"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Operator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Identity.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Identity.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Identity.call" title="Permalink to this definition"></a></dt>
+<dd><p>Function to be overriden</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*input_nodes</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – nodes with values
+that are inputs to this function
+on the computation graph.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>a OperatorNode, a number or array-like.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Identity.grad">
+<span class="sig-name descname"><span class="pre">grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Identity.grad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Identity.grad" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Multiply">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">Multiply</span></span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Multiply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Multiply" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Operator" title="zkynet.framework.computation_graph.Operator"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Operator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Multiply.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Multiply.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Multiply.call" title="Permalink to this definition"></a></dt>
+<dd><p>Function to be overriden</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*input_nodes</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – nodes with values
+that are inputs to this function
+on the computation graph.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>a OperatorNode, a number or array-like.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Square">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">Square</span></span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Square"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Square" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#zkynet.framework.computation_graph.Operator" title="zkynet.framework.computation_graph.Operator"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Operator</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.operations.Square.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#Square.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.Square.call" title="Permalink to this definition"></a></dt>
+<dd><p>Function to be overriden</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*input_nodes</strong> (<a class="reference internal" href="#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – nodes with values
+that are inputs to this function
+on the computation graph.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>a OperatorNode, a number or array-like.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.framework.operations.add">
+<span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.add" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.framework.operations.identity">
+<span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.identity" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.framework.operations.mult">
+<span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">mult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#mult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.mult" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.framework.operations.square">
+<span class="sig-prename descclassname"><span class="pre">zkynet.framework.operations.</span></span><span class="sig-name descname"><span class="pre">square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/operations.html#square"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.operations.square" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-zkynet.framework">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-zkynet.framework" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Kaiyu Zheng.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

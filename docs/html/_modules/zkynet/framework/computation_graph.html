@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zkynet.framework.computation_graph &mdash; zkynet  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> zkynet
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">zkynet</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>zkynet.framework.computation_graph</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for zkynet.framework.computation_graph</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A framework to define functions with corresponding,</span>
+<span class="sd">dynamically generated computational graph. Gradients</span>
+<span class="sd">are computed using automatic differentiation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="c1">########## Auxiliary objects ##########</span>
+<div class="viewcode-block" id="FunctionCallManager"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.FunctionCallManager">[docs]</a><span class="k">class</span> <span class="nc">FunctionCallManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    In order to enforce independence between computational</span>
+<span class="sd">    graphs from different calls, FunctionCallManager will</span>
+<span class="sd">    maintain the call ID of the current call, which is assigned</span>
+<span class="sd">    to all nodes that are created during the call.</span>
+
+<span class="sd">    It will clear the call ID if the call to the trigger</span>
+<span class="sd">    function is finished (the trigger function is the first</span>
+<span class="sd">    function that is called, which is likely a user-defined</span>
+<span class="sd">    model).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger_function</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="FunctionCallManager.call_begin"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.FunctionCallManager.call_begin">[docs]</a>    <span class="k">def</span> <span class="nf">call_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We have no call now - so &#39;fun&#39; is the trigger function</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">unique_id</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trigger_function</span> <span class="o">=</span> <span class="n">fun</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># we only need to track whether the</span>
+            <span class="c1"># trigger function has finished</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="FunctionCallManager.call_end"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.FunctionCallManager.call_end">[docs]</a>    <span class="k">def</span> <span class="nf">call_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fun</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No call is happening.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_function</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="n">fun</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="c1"># we only need to track hwether the</span>
+            <span class="c1"># trigger function has finished</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># OK. The trigger function has terminated.</span>
+            <span class="c1"># So, we are done.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trigger_function</span> <span class="o">=</span> <span class="kc">None</span></div></div>
+<span class="n">_GLOBAL_CALL_MANAGER</span> <span class="o">=</span> <span class="n">FunctionCallManager</span><span class="p">()</span>
+
+
+<span class="c1">########## Template objects ###########</span>
+<div class="viewcode-block" id="TemplateObject"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.TemplateObject">[docs]</a><span class="k">class</span> <span class="nc">TemplateObject</span><span class="p">:</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">functional_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The name that identifies the ROLE this template</span>
+<span class="sd">        object plays in the definition of a function; For example,</span>
+<span class="sd">        if self is an Input, then this is the name that identifies</span>
+<span class="sd">        both the function and the role this input plays to that function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The string that identifies the VARAIBLE name (or ENTITY)</span>
+<span class="sd">        that this template object represents. For example,</span>
+<span class="sd">        we could have two Function objects that represent</span>
+<span class="sd">        the same function but we care about their outputs</span>
+<span class="sd">        as separate variables. Then, these two Function objects</span>
+<span class="sd">        should have the same &#39;functional_name&#39; but different</span>
+<span class="sd">        &#39;name&#39;.</span>
+
+<span class="sd">        Assumption: &#39;name&#39; should not contain any dot &#39;.&#39; character.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Function"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function">[docs]</a><span class="k">class</span> <span class="nc">Function</span><span class="p">(</span><span class="n">TemplateObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Function is an abstract template that maps</span>
+<span class="sd">    inputs (ordered) to an output subject to some</span>
+<span class="sd">    internal parameters; the values of these parameters</span>
+<span class="sd">    are kept tracked of in the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            inputs (tuple): a tuple of ordered inputs, each a Variable.</span>
+<span class="sd">            params (list/set-like): parameters, either a Parameter or a Constant.</span>
+<span class="sd">                order does not matter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_functional_name</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">fullname</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_functional_name</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">unique_id</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">Variable</span><span class="p">)</span> <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">),</span>\
+            <span class="sa">f</span><span class="s2">&quot;all objects in &#39;inputs&#39; must be of type Variable&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ordered_input_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">short_name</span> <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+            <span class="n">inp</span><span class="o">.</span><span class="n">fun</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">short_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span>
+
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">)</span>\
+                   <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">Constant</span><span class="p">)</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">),</span>\
+                   <span class="sa">f</span><span class="s2">&quot;all objects in &#39;params&#39; must be of type Parameter or Constant&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">param</span><span class="o">.</span><span class="n">fun</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">short_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The variable name of a function should be</span>
+<span class="sd">        thought of as the variable that represents</span>
+<span class="sd">        the function&#39;s output. Two Functions that</span>
+<span class="sd">        represent two different variables have different</span>
+<span class="sd">        names; But they share the same &quot;functional name&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">functional_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function name without id&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_functional_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span>
+
+<div class="viewcode-block" id="Function.input_name"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.input_name">[docs]</a>    <span class="k">def</span> <span class="nf">input_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ordered_input_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Function.call"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">call_args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function to be overriden</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           *input_nodes (Node): nodes with values</span>
+<span class="sd">                that are inputs to this function</span>
+<span class="sd">                on the computation graph.</span>
+<span class="sd">        Output:</span>
+<span class="sd">           a OperatorNode, a number or array-like.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="k">def</span> <span class="nf">_construct_input_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;input nodes to this Function.</span>
+
+<span class="sd">        This is used at any step when buidling an</span>
+<span class="sd">        OperatorNode during the computational graph</span>
+<span class="sd">        instantiation. Each node in the output list</span>
+<span class="sd">        correspond to both:</span>
+<span class="sd">         (1) a slot in the inputs that define this function.</span>
+<span class="sd">         (2) an element in &#39;input_vals&#39;</span>
+
+<span class="sd">        Note that an element in &#39;input_vals&#39; could be:</span>
+<span class="sd">        - a number or array</span>
+<span class="sd">        - a Parameter or a Constant</span>
+<span class="sd">        - an InputNode or OperatorNode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">input_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ordered_input_names</span><span class="p">)):</span>
+                <span class="n">input_val</span> <span class="o">=</span> <span class="n">input_vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_val</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+                    <span class="n">node</span> <span class="o">=</span> <span class="n">input_val</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_val</span><span class="p">,</span> <span class="n">Input</span><span class="p">):</span>
+                    <span class="n">node</span> <span class="o">=</span> <span class="n">input_val</span><span class="o">.</span><span class="n">to_node</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># input_val is likely a number or array</span>
+                    <span class="n">input_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ordered_input_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">node</span> <span class="o">=</span> <span class="n">InputNode</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="n">input_name</span><span class="p">],</span>
+                                     <span class="n">input_val</span><span class="p">)</span>
+                <span class="n">input_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;When calling a function, all its inputs must be instantiated.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">input_nodes</span>
+
+<div class="viewcode-block" id="Function.param"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.param">[docs]</a>    <span class="k">def</span> <span class="nf">param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the Parameter corresponding to</span>
+<span class="sd">        the given short_name, used when initializing</span>
+<span class="sd">        this Function.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">short_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not a parameter.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="n">short_name</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">,</span> <span class="o">**</span><span class="n">call_args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The function is called (forward-pass).</span>
+<span class="sd">        A computational graph is dynamically created.</span>
+<span class="sd">        The input_vals will be converted (if not already)</span>
+<span class="sd">        to a Node object.</span>
+
+<span class="sd">        Note: we enforce that two calls of the same function</span>
+<span class="sd">        results in two different computational graphs even</span>
+<span class="sd">        if the graph structure are the same &amp; nodes</span>
+<span class="sd">        have the same values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *input_vals: each input is the value of an input</span>
+<span class="sd">                that defines this function. Order matters.</span>
+<span class="sd">                This value is either just a value (e.g. numpy array),</span>
+<span class="sd">                a Parameter or Constant, an InputNode, or a OperatorNode.</span>
+<span class="sd">            **call_args: call-time configurations to pass down</span>
+<span class="sd">                 to call.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            OperatorNode: an object that represents a non-leaf node</span>
+<span class="sd">                in the grounded computational graph.</span>
+<span class="sd">            or a ModuleGraph that wraps a OperatorNode; the ModuleGraph</span>
+<span class="sd">                is for the trigger function, which is what the user called.</span>
+<span class="sd">                (This means, from a user&#39;s perspective, always expect getting</span>
+<span class="sd">                 back a ModuleGraph when you call a Module.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The implementation is specific to Operator and Module. See below.</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Operator"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Operator">[docs]</a><span class="k">class</span> <span class="nc">Operator</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An operator is a function that we intend to</span>
+<span class="sd">    hard code its derivatives. For such functions,</span>
+<span class="sd">    we expect that the output of &quot;call&quot; should</span>
+<span class="sd">    be a number, or array-like, instead of a</span>
+<span class="sd">    OperatorNode. That means, implementation</span>
+<span class="sd">    of an Operator&#39;s forward pass does not depend</span>
+<span class="sd">    or use other operators. (Note that __call__</span>
+<span class="sd">    still, as defined, returns a Node object.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">,</span> <span class="o">**</span><span class="n">call_args</span><span class="p">):</span>
+        <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">input_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_input_nodes</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
+        <span class="n">output_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">input_nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">call_args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_val</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The output of Operator&#39;s &#39;call&#39; function must not be a Node&quot;</span><span class="p">)</span>
+        <span class="n">output_node</span> <span class="o">=</span> <span class="n">OperatorNode</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
+                                   <span class="n">output_val</span><span class="p">,</span> <span class="n">input_nodes</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_nodes</span><span class="p">)):</span>
+            <span class="n">input_nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_parent</span><span class="p">(</span><span class="n">output_node</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+        <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output_node</span></div>
+
+
+<div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Module is a function that is intended to</span>
+<span class="sd">    be user-defined, complex functions whose</span>
+<span class="sd">    forward call consists of operators and other</span>
+<span class="sd">    modules. The gradient of this function is</span>
+<span class="sd">    automatically computed using autodiff.</span>
+
+<span class="sd">    There is a flat grounded computational graph</span>
+<span class="sd">    corresponding to a module that is created when</span>
+<span class="sd">    the module is called.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">,</span> <span class="o">**</span><span class="n">call_args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If this Module is the trigger function, then</span>
+<span class="sd">        we will return a ModuleGraph. Otherwise,</span>
+<span class="sd">        return a OperatorNode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">input_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_input_nodes</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
+        <span class="n">output_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">input_nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">call_args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_val</span><span class="p">,</span> <span class="n">OperatorNode</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">trigger_function</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="c1"># this is the trigger function;</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">ModuleGraph</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="p">,</span> <span class="n">output_val</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># so we just return output_val (OperatorNode)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">output_val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">OperatorNode</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
+                                  <span class="n">output_val</span><span class="p">,</span> <span class="n">input_nodes</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_nodes</span><span class="p">)):</span>
+                <span class="n">input_nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_parent</span><span class="p">(</span><span class="n">output_node</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+        <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="Input"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Input">[docs]</a><span class="k">class</span> <span class="nc">Input</span><span class="p">(</span><span class="n">TemplateObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An Input is an abstract template</span>
+<span class="sd">    for an input to a function, but without</span>
+<span class="sd">    a value.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_name</span><span class="p">,</span> <span class="n">input_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            short_name (str): short name of this input (e.g. &#39;x&#39;),</span>
+<span class="sd">                should indicate its role in the function</span>
+<span class="sd">                that uses it. Note that the actual variable</span>
+<span class="sd">                name of this Input will be prefixed (i.e. namespaced)</span>
+<span class="sd">                by the function&#39;s variable name.</span>
+<span class="sd">            input_type (str): identifies the type of input,</span>
+<span class="sd">                for example &#39;variable&#39; means it&#39;s based on</span>
+<span class="sd">                observations, and &#39;parameter&#39; means it is</span>
+<span class="sd">                a function&#39;s self-maintained value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span> <span class="o">=</span> <span class="n">short_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="n">input_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Should be set upon the corresponding Function&#39;s __init__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fun</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;the function that this input is for&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fun</span>
+
+    <span class="nd">@fun</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fun</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input&#39;s function is already set.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">Function</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;argument &#39;f&#39; must be of type Function&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fun</span> <span class="o">=</span> <span class="n">f</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Name that represents the variable after being assigned to a function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fun</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input&#39;s function is NOT set. No variable to name.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_fun</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The short name given at construction that does not</span>
+<span class="sd">        uniquely identify this Input, but does identify this</span>
+<span class="sd">        input with respect to its Function.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">functional_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The functional name that identifies both the function and the role</span>
+<span class="sd">        this input plays to that function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fun</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input&#39;s function is NOT set. No functional name.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_fun</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="Input.to_node"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Input.to_node">[docs]</a>    <span class="k">def</span> <span class="nf">to_node</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;convert to InputNode; assuming this is called during a</span>
+<span class="sd">        function call (so there would be a call id assigned to this</span>
+<span class="sd">        InputNode)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">InputNode</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Variable"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Variable">[docs]</a><span class="k">class</span> <span class="nc">Variable</span><span class="p">(</span><span class="n">Input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Input variable; you have no control over.</span>
+<span class="sd">    Nevertheless, this can be used to specifying how</span>
+<span class="sd">    to validate an assignment to this variable at &#39;call&#39;</span>
+<span class="sd">    time (not yet implemented).&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;variable&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Parameter"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Parameter">[docs]</a><span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">Input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Model parameter; you HAVE control over.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">init_value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;parameter&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">init_value</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span></div>
+
+
+<div class="viewcode-block" id="Constant"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Constant">[docs]</a><span class="k">class</span> <span class="nc">Constant</span><span class="p">(</span><span class="n">Input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Its value should not change; could</span>
+<span class="sd">    be used to specify configuration of a</span>
+<span class="sd">    function (e.g. kernel size of convolution)&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;constant&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">val</span>
+
+<div class="viewcode-block" id="Constant.assign"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Constant.assign">[docs]</a>    <span class="k">def</span> <span class="nf">assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Constant value cannot change&quot;</span><span class="p">)</span></div></div>
+
+
+<span class="c1">########### The computation graph components ##########</span>
+<div class="viewcode-block" id="IDObject"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.IDObject">[docs]</a><span class="k">class</span> <span class="nc">IDObject</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Object with an ID; Two objects</span>
+<span class="sd">    are the same if they have the same id.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">_id</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">IDObject</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span></div>
+
+
+<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="n">IDObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Node in the computation graph, a DAG.</span>
+<span class="sd">    A node can always be regarded as an instantiation of</span>
+<span class="sd">    a particular Input to a Function. It carries a value.</span>
+<span class="sd">    Since it is a DAG, a node can have multiple children</span>
+<span class="sd">    and multiple parents.</span>
+
+<span class="sd">    We distinguish two node types: InputNode and OperatorNode.</span>
+<span class="sd">    Don&#39;t confuse InputNode with Input; The InputNode</span>
+<span class="sd">    literally refers to a leaf node on the DAG, while Input</span>
+<span class="sd">    is just a placeholder of input in a Function template.</span>
+
+<span class="sd">    The InputNode is a leaf node, while the OperatorNode</span>
+<span class="sd">    is not a leaf node. Both should be grounded with values.</span>
+<span class="sd">    The value of the OperatorNode represents the output</span>
+<span class="sd">    of the function (specifically, an Operator) under</span>
+<span class="sd">    some InputNode instantiation.</span>
+
+<span class="sd">    Note: the notion of &#39;child&#39; and &#39;parent&#39; might be</span>
+<span class="sd">    reversed to some people. Here, we mean:</span>
+
+<span class="sd">       child --&gt; parent</span>
+
+<span class="sd">    because I want to view the input as the child and</span>
+<span class="sd">    the output as the parent (that feels more natural)</span>
+
+<span class="sd">    Note on equality:</span>
+
+<span class="sd">       Two Node objects are equal if:</span>
+<span class="sd">       - they have the same ID</span>
+<span class="sd">       - they have the same value</span>
+
+<span class="sd">       Two Node objects have the same ID if:</span>
+<span class="sd">       - they belong to the same computational graph (i.e. _same_ function</span>
+<span class="sd">            call; note one function call corresponds to one computational graph)</span>
+<span class="sd">       - they instantiate the same object (Input or Function),</span>
+<span class="sd">            i.e. they have the same &#39;ref&#39; (identified by the &#39;functional name&#39;)</span>
+
+<span class="sd">    Note on restricting non-leaf nodes to OperatorNodes:</span>
+
+<span class="sd">        Our idea of an Operator is a Function with a hard-coded</span>
+<span class="sd">        differentiation function. This makes up the &quot;flat&quot;</span>
+<span class="sd">        computational graph, which is all that we need to properly</span>
+<span class="sd">        compute gradients.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            call_id (str): the ID of the function call for which this</span>
+<span class="sd">                node (or computational graph) is constructed. Note that</span>
+<span class="sd">                all nodes on the same graph should have the same call id.</span>
+<span class="sd">            ref (Function or Input): a reference to a Function or</span>
+<span class="sd">                an Input object that this Node instantiates for.</span>
+<span class="sd">            children (list): list of children nodes of this node</span>
+<span class="sd">            parents (dict): maps from OperatorNode (parent) to a string that</span>
+<span class="sd">                indicates the name of the input to the parent function that</span>
+<span class="sd">                this node corresponds to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">call_id</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">ref</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="n">call_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span> <span class="o">=</span> <span class="n">ref</span>
+        <span class="k">if</span> <span class="n">children</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_children</span> <span class="o">=</span> <span class="n">children</span>
+        <span class="k">if</span> <span class="n">parents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parents</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parents</span> <span class="o">=</span> <span class="n">parents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">id</span>\
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;reference to TemplateObject this node instantiates for.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+
+<div class="viewcode-block" id="Node.isleaf"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Node.isleaf">[docs]</a>    <span class="k">def</span> <span class="nf">isleaf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parents</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parent_input_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parents</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span>
+
+<div class="viewcode-block" id="Node.add_parent"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Node.add_parent">[docs]</a>    <span class="k">def</span> <span class="nf">add_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">parent_input_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parents</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent_input_name</span></div>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parents_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parents_str</span><span class="p">()</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)</span><span class="si">{</span><span class="n">parents_str</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_get_parents_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parents_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parents</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">parents_str</span> <span class="o">=</span> <span class="s2">&quot;--&gt;[&quot;</span>
+            <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">parent_input_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parents</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">parents_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">parent</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">parent_input_name</span><span class="si">}</span><span class="s2">;&quot;</span>
+            <span class="n">parents_str</span> <span class="o">+=</span> <span class="s2">&quot;]&quot;</span>
+        <span class="k">return</span> <span class="n">parents_str</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InputNode"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.InputNode">[docs]</a><span class="k">class</span> <span class="nc">InputNode</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A leaf node in the computational graph&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">Input</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span></div>
+
+
+<div class="viewcode-block" id="OperatorNode"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.OperatorNode">[docs]</a><span class="k">class</span> <span class="nc">OperatorNode</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A non-leaf node in the computational graph&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">children</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            op (Operator): the Operator this node subsumes.</span>
+<span class="sd">            children (list): list of children nodes of this node;</span>
+<span class="sd">                note that order matters; the order of the children</span>
+<span class="sd">                should match the order of inputs when calling the</span>
+<span class="sd">                underlying function &#39;fun&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Function</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span>
+                         <span class="n">children</span><span class="o">=</span><span class="n">children</span><span class="p">,</span>
+                         <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parents_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parents_str</span><span class="p">()</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&gt;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)</span><span class="si">{</span><span class="n">parents_str</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">operator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span>
+
+<div class="viewcode-block" id="OperatorNode.grad"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.OperatorNode.grad">[docs]</a>    <span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;computes the gradient of the function</span>
+<span class="sd">        with respect to every input and &quot;&quot;&quot;</span></div></div>
+
+<div class="viewcode-block" id="ModuleGraph"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.ModuleGraph">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ModuleGraph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A ModuleGraph is a computational graph that</span>
+<span class="sd">    is grounded when a Module is called. It stores</span>
+<span class="sd">    a flat computational graph (by &#39;flat&#39; we mean</span>
+<span class="sd">    that its internal OperatorNodes should only be</span>
+<span class="sd">    Operators.)</span>
+
+<span class="sd">    Note that since a Module&#39;s call may involve</span>
+<span class="sd">    calling another module, we don&#39;t actually</span>
+<span class="sd">    create a graph for that module. We only care</span>
+<span class="sd">    about the trigger function (i.e. the first Module),</span>
+<span class="sd">    similar to FunctionCallManager.</span>
+
+<span class="sd">    Since the actual graph is captured by a Node,</span>
+<span class="sd">    this class is very simplistic, but it does serve</span>
+<span class="sd">    an important use.</span>
+
+<span class="sd">    This object is assumed to be immutable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="c1"># the trigger function</span>
+    <span class="n">module</span><span class="p">:</span> <span class="n">Module</span>
+
+    <span class="c1"># the root of the DAG</span>
+    <span class="c1"># that represents the flat computational</span>
+    <span class="c1"># graph for module instantiated with given</span>
+    <span class="c1"># input values.</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">OperatorNode</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ModuleGraph</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">call_id</span>\
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">name</span>\
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">root</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<span class="c1">########## algorithms to process computational graphs ##########</span>
+<div class="viewcode-block" id="get_input_nodes"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.get_input_nodes">[docs]</a><span class="k">def</span> <span class="nf">get_input_nodes</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        root (Node): the root on a (sub) computational graph</span>
+<span class="sd">    Output:</span>
+<span class="sd">        set: a set of nodes of type InputNode</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">worklist</span> <span class="o">=</span> <span class="p">[</span><span class="n">root</span><span class="p">]</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="p">{</span><span class="n">root</span><span class="p">}</span>
+    <span class="n">input_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">worklist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">worklist</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">InputNode</span><span class="p">):</span>
+            <span class="n">input_nodes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">worklist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">input_nodes</span></div>
+
+<div class="viewcode-block" id="get_all_nodes"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.get_all_nodes">[docs]</a><span class="k">def</span> <span class="nf">get_all_nodes</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        root (Node): the root on a (sub) computational graph</span>
+<span class="sd">    Output:</span>
+<span class="sd">        set: a set of nodes of type InputNode</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">worklist</span> <span class="o">=</span> <span class="p">[</span><span class="n">root</span><span class="p">]</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="p">{</span><span class="n">root</span><span class="p">}</span>
+    <span class="n">all_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">worklist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">worklist</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">all_nodes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">worklist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">all_nodes</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Kaiyu Zheng.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
