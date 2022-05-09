@@ -5,6 +5,48 @@ are computed using automatic differentiation.
 """
 from .. import utils
 
+########## Auxiliary objects ##########
+class FunctionCallManager:
+    """
+    In order to enforce independence between computational
+    graphs from different calls, FunctionCallManager will
+    maintain the call ID of the current call, which is assigned
+    to all nodes that are created during the call.
+
+    It will clear the call ID if the call to the trigger
+    function is finished (the trigger function is the first
+    function that is called, which is likely a user-defined
+    model).
+    """
+    def __init__(self):
+        self.call_id = None
+        self.trigger_function = None
+
+    def call_begin(self, fun):
+        if self.call_id is None:
+            # We have no call now - so 'fun' is the trigger function
+            self.call_id = utils.unique_id()
+            self.trigger_function = fun
+        else:
+            # we only need to track whether the
+            # trigger function has finished
+            pass
+
+    def call_end(self, fun):
+        if self.call_id is None:
+            raise ValueError("No call is happening.")
+        if self.trigger_function.name != fun.name:
+            # we only need to track whether the
+            # trigger function has finished
+            pass
+        else:
+            # OK. The trigger function has terminated.
+            # So, we are done.
+            self.call_id = None
+            self.trigger_function = None
+_GLOBAL_CALL_MANAGER = FunctionCallManager()
+
+
 ########## Template objects ###########
 class TemplateObject:
     @property
@@ -51,21 +93,6 @@ class Function(TemplateObject):
             param.fun = self
             self._params[param.name] = param
 
-        # the call id of the call that is happening now
-        self._current_call_id = None
-
-    def param_node(self, name):
-        """Get an InputNode for the given parameter;
-        Used to construct computational graph."""
-        if name not in self._params:
-            raise ValueError(f"{name} is not a parameter.")
-        assert self._current_call_id is not None, "call id is not set!"
-        param = self._params[name]
-        return InputNode(self._current_call_id, param, param.value)
-
-    def param_val(self, n):
-        return self._params[n].value
-
     @property
     def name(self):
         return self._name
@@ -76,22 +103,6 @@ class Function(TemplateObject):
         The function's name
         """
         return self.name
-
-    def _set_current_call_id(self, call_id):
-        """
-        Sets the current call id, if it is not yet set.
-        Otherwise, checks if the current call id matches
-        the given one. Throws an exception if not. This is
-        because this function is expected to be called only
-        while one function call is being made.
-
-        User should not call this function.
-        """
-        if self._current_call_id is not None\
-           and self._current_call_id != call_id:
-            raise ValueError(f"Unexpected behavior: Current call id {self._current_call_id}"\
-                             "is different from given call id {call_id}.")
-        self._current_call_id = call_id
 
     @property
     def inputs(self):
@@ -114,14 +125,13 @@ class Function(TemplateObject):
     def _construct_input_nodes(self, *input_vals):
         """input nodes to this FunctionNode.
         Note: assume self._current_call_id is assigned"""
-        assert self._current_call_id is not None, "call id is not set!"
         input_nodes = []
         try:
             for i in range(len(self._ordered_input_names)):
                 input_val = input_vals[i]
                 input_name = self._ordered_input_names[i]
                 if not isinstance(input_val, Node):
-                    node = InputNode(self._current_call_id,
+                    node = InputNode(_GLOBAL_CALL_MANAGER.call_id,
                                      self.inputs[input_name],
                                      input_val)
                     input_nodes.append(node)
@@ -131,6 +141,16 @@ class Function(TemplateObject):
             raise ValueError("When calling a function, all its inputs must be instantiated.")
         return input_nodes
 
+    def param_node(self, name):
+        """Get an InputNode for the given parameter;
+        Used to construct computational graph."""
+        if name not in self._params:
+            raise ValueError(f"{name} is not a parameter.")
+        param = self._params[name]
+        return InputNode(_GLOBAL_CALL_MANAGER.call_id, param, param.value)
+
+    def param_val(self, n):
+        return self._params[n].value
 
     def __call__(self, *input_vals, **call_args):
         """The function is called (forward-pass).
@@ -155,8 +175,7 @@ class Function(TemplateObject):
             FunctionNode: an object that represents a non-leaf node
                 in the grounded computational graph.
         """
-        if self._current_call_id is None:
-            self._current_call_id = "{}-call{}".format(type(self), utils.unique_id())
+        _GLOBAL_CALL_MANAGER.call_begin(self)
 
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes, **call_args)
@@ -166,15 +185,16 @@ class Function(TemplateObject):
             # "call" returns likely the output of running "call" for some other
             # function.  We extract its value, yet need to preserve the computation
             # graph, i.e. output_val will be the child node.
-            output_node = FunctionNode(self._current_call_id, self,
+            output_node = FunctionNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                        output_val.value, [output_val])
             output_val.add_parent(output_node, "preserve")
         else:
-            output_node = FunctionNode(self._current_call_id, self,
+            output_node = FunctionNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                        output_val, input_nodes)
             for i in range(len(input_nodes)):
                 input_nodes[i].add_parent(output_node, self.input_name(i))
-        self._current_call_id = None   # call has finished
+
+        _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
 
 
@@ -429,7 +449,6 @@ class FunctionNode(Node):
                 underlying function 'fun'.
         """
         assert isinstance(fun, Function)
-        fun._set_current_call_id(call_id)  # make sure the call id is in sync
         super().__init__(call_id, fun, value,
                          children=children,
                          parents=parents)

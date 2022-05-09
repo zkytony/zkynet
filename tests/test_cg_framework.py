@@ -24,25 +24,6 @@ class MyTestModel1(cg.Function):
         c = op.mult(a, b)
         return c
 
-######## Integrity tests ######################
-# two calls of the same function results in
-# two different computational graphs even
-# if the graph structure are the same & nodes
-# have the same values.
-def test_call_integrity():
-    m = MyTestModel1()
-    result1 = m(3)
-    result2 = m(3)
-    assert result1 != result2
-    assert result1.id != result2.id
-
-    # Make sure all nodes in one graph have the
-    # same call id
-    all_nodes1 = cg.get_all_nodes(result1)
-    for n1 in all_nodes1:
-        for n2 in all_nodes1:
-            assert n1._call_id == n2._call_id
-
 
 ######## Equality tests ########################
 # Test: Equality of nodes. Two Node objects are equal if:
@@ -55,6 +36,35 @@ def test_call_integrity():
 # - they correspond to the same template (Input or Function)
 def test_Node_equality():
     pass
+
+
+######## Integrity tests ######################
+# two calls of the same function results in
+# two different computational graphs even
+# if the graph structure are the same & nodes
+# have the same values.
+def test_call_integrity():
+    m = MyTestModel1()
+    result1 = m(3)
+    result2 = m(3)
+
+    # Make sure all nodes in one graph have the
+    # same call id
+    all_nodes1 = cg.get_all_nodes(result1)
+    for n1 in all_nodes1:
+        for n2 in all_nodes1:
+            assert n1._call_id == n2._call_id
+    all_nodes2 = cg.get_all_nodes(result2)
+    for n1 in all_nodes2:
+        for n2 in all_nodes2:
+            assert n1._call_id == n2._call_id
+
+    # Make sure nodes from different calls
+    # have different call ids and different ids
+    assert result1._call_id != result2._call_id
+    assert result1.id != result2.id
+    assert result1 != result2
+
 
 def run():
     test_call_integrity()
