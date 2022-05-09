@@ -198,6 +198,32 @@ class Function(TemplateObject):
         return output_node
 
 
+class Operator(Function):
+    """
+    An operator is a function that we intend to
+    hard code its derivatives. For such functions,
+    we expect that the output of "call" should
+    be a number, or array-like, instead of a
+    FunctionNode. That means, implementation
+    of an Operator's forward pass does not depend
+    or use other operators.
+    """
+
+
+class Module(Function):
+    """
+    A Module is a function that is intended to
+    be user-defined, complex functions whose
+    forward call consists of operators and other
+    modules. The gradient of this function is
+    automatically computed using autodiff.
+
+    There is a flat grounded computational graph
+    corresponding to a module that is created when
+    the module is called.
+    """
+
+
 class Input(TemplateObject):
     """An Input is an abstract template
     for an input to a function, but without
