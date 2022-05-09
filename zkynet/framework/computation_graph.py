@@ -449,24 +449,30 @@ class Node(IDObject):
     because I want to view the input as the child and
     the output as the parent (that feels more natural)
 
-    Note on equality:
+    *Note on equality:*
 
-       Two Node objects are equal if:
-       - they have the same ID
-       - they have the same value
+     * Two Node objects are equal if:
+       (1) they have the same ID
+       (2) they have the same value
 
-       Two Node objects have the same ID if:
-       - they belong to the same computational graph (i.e. _same_ function
-            call; note one function call corresponds to one computational graph)
-       - they instantiate the same object (Input or Function),
-            i.e. they have the same 'ref' (identified by the 'functional name')
+     * Two Node objects have the same ID if:
 
-    Note on restricting non-leaf nodes to OperatorNodes:
+       (1) they belong to the same computational graph
+       (i.e. _same_ function call; note one function call
+       corresponds to one computational graph)
+
+       (2) they instantiate the same object (Input or Function),
+       i.e. they have the same 'ref' (identified by the
+       'functional name')
+
+
+    *Note on restricting non-leaf nodes to OperatorNodes:*
 
         Our idea of an Operator is a Function with a hard-coded
         differentiation function. This makes up the "flat"
         computational graph, which is all that we need to properly
         compute gradients.
+
     """
     def __init__(self, call_id, ref, value, children=None, parents=None):
         """

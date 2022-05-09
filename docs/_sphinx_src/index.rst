@@ -11,14 +11,28 @@ zkynet: exploring deep learning basics
    :caption: Contents:
 
 
-Check out:
+Key components
+--------------
 
-* The computational graph and automatic differentiation framework
+* :doc:`The computational graph and automatic differentiation framework <computation_graph>`
+
+
+.. raw:: html
+
+   <hr>
+
+Notable modules
+---------------
 
 .. autosummary::
 
    ~zkynet.framework.computation_graph
 
+   ~zkynet.framework.operations
+
+.. raw:: html
+
+   <hr>
 
 
 Indices and tables

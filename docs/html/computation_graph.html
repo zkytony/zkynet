@@ -343,25 +343,23 @@ reversed to some people. Here, we mean:</p>
 </div></blockquote>
 <p>because I want to view the input as the child and
 the output as the parent (that feels more natural)</p>
-<p>Note on equality:</p>
+<p><em>Note on equality:</em></p>
 <blockquote>
-<div><p>Two Node objects are equal if:
-- they have the same ID
-- they have the same value</p>
-<p>Two Node objects have the same ID if:
-- they belong to the same computational graph (i.e. _same_ function</p>
-<blockquote>
-<div><p>call; note one function call corresponds to one computational graph)</p>
-</div></blockquote>
-<ul class="simple">
-<li><dl class="simple">
-<dt>they instantiate the same object (Input or Function),</dt><dd><p>i.e. they have the same ‘ref’ (identified by the ‘functional name’)</p>
-</dd>
-</dl>
+<div><ul>
+<li><p>Two Node objects are equal if:
+(1) they have the same ID
+(2) they have the same value</p></li>
+<li><p>Two Node objects have the same ID if:</p>
+<p>(1) they belong to the same computational graph
+(i.e. _same_ function call; note one function call
+corresponds to one computational graph)</p>
+<p>(2) they instantiate the same object (Input or Function),
+i.e. they have the same ‘ref’ (identified by the
+‘functional name’)</p>
 </li>
 </ul>
 </div></blockquote>
-<p>Note on restricting non-leaf nodes to OperatorNodes:</p>
+<p><em>Note on restricting non-leaf nodes to OperatorNodes:</em></p>
 <blockquote>
 <div><p>Our idea of an Operator is a Function with a hard-coded
 differentiation function. This makes up the “flat”
