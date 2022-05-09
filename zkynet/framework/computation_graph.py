@@ -225,7 +225,7 @@ class Module(Function):
     """
     def __call__(self, *input_vals, **call_args):
         """
-        If this Module is the trigger module, then
+        If this Module is the trigger function, then
         we will return a ModuleGraph. Otherwise,
         return a OperatorNode.
         """
@@ -234,18 +234,14 @@ class Module(Function):
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes, **call_args)
 
-
-
-
-
-        # Wrap the output value as a OperatorNode, and connect the graph.
         if isinstance(output_val, OperatorNode):
-            # "call" returns likely the output of running "call" for some other
-            # function.  We extract its value, yet need to preserve the computation
-            # graph, i.e. output_val will be the child node.
-            output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
-                                       output_val.value, [output_val])
-            output_val.add_parent(output_node, "preserve")
+            if _GLOBAL_CALL_MANAGER.trigger_function.name == self.name:
+                # this is the trigger function;
+                return ModuleGraph(_GLOBAL_CALL_MANAGER.call_id,
+                                   self, output_val)
+            else:
+                # this is not; so we pass on the OperatorNode
+                return output_val
         else:
             output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                        output_val, input_nodes)
@@ -384,7 +380,8 @@ class Node(IDObject):
     The InputNode is a leaf node, while the OperatorNode
     is not a leaf node. Both should be grounded with values.
     The value of the OperatorNode represents the output
-    of the function under some InputNode instantiation.
+    of the function (specifically, an Operator) under
+    some InputNode instantiation.
 
     Note: the notion of 'child' and 'parent' might be
     reversed to some people. Here, we mean:
@@ -405,6 +402,13 @@ class Node(IDObject):
             call; note one function call corresponds to one computational graph)
        - they instantiate the same object (Input or Function),
             i.e. they have the same 'ref' (identified by the 'functional name')
+
+    Note on restricting non-leaf nodes to OperatorNodes:
+
+        Our idea of an Operator is a Function with a hard-coded
+        differentiation function. This makes up the "flat"
+        computational graph, which is all that we need to properly
+        compute gradients.
     """
     def __init__(self, call_id, ref, value, children=None, parents=None):
         """
@@ -476,7 +480,7 @@ class Node(IDObject):
         if len(self._parents) > 0:
             parents_str = "-->["
             for parent, parent_input_name in self._parents.items():
-                parents_str += f"{parent.function.name}:{parent_input_name};"
+                parents_str += f"{parent.operator.name}:{parent_input_name};"
             parents_str += "]"
         return parents_str
 
@@ -497,26 +501,26 @@ class InputNode(Node):
 
 class OperatorNode(Node):
     """A non-leaf node in the computational graph"""
-    def __init__(self, call_id, fun, value, children, parents=None):
+    def __init__(self, call_id, op, value, children, parents=None):
         """
         Args:
-            fun (Function): the Function this node subsumes.
+            op (Operator): the Operator this node subsumes.
             children (list): list of children nodes of this node;
                 note that order matters; the order of the children
                 should match the order of inputs when calling the
                 underlying function 'fun'.
         """
-        assert isinstance(fun, Function)
-        super().__init__(call_id, fun, value,
+        assert isinstance(op, Function)
+        super().__init__(call_id, op, value,
                          children=children,
                          parents=parents)
 
     def __str__(self):
         parents_str = self._get_parents_str()
-        return f"{self.__class__.__name__}<{self.function.name}>({self.value}){parents_str}"
+        return f"{self.__class__.__name__}<{self.operator.name}>({self.value}){parents_str}"
 
     @property
-    def function(self):
+    def operator(self):
         return self._ref
 
     def grad(self):
@@ -536,9 +540,7 @@ class ModuleGraph:
     calling another module, we don't actually
     create a graph for that module. We only care
     about the trigger function (i.e. the first Module),
-    similar to FunctionCallManager. As a result,
-    the FunctionCallManager will have the reference
-    to the ModuleGraph when a call ID is created.
+    similar to FunctionCallManager.
 
     Since the actual graph is captured by a Node,
     this class is very simplistic, but it does serve
@@ -548,7 +550,7 @@ class ModuleGraph:
     """
     call_id: str
 
-    # the trigger module
+    # the trigger function
     module: Module
 
     # the root of the DAG
@@ -556,6 +558,10 @@ class ModuleGraph:
     # graph for module instantiated with given
     # input values.
     root: OperatorNode
+
+    @property
+    def value(self):
+        return self.root.value
 
 
 ########## algorithms to process computational graphs ##########
