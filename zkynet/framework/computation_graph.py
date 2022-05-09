@@ -481,6 +481,9 @@ class Node(IDObject):
                 indicates the name of the input to the parent function that
                 this node corresponds to.
         """
+        _id = f"{self.__class__.__name__}_{call_id}_{ref.name}"
+        super().__init__(_id)
+
         self.call_id = call_id
         self._ref = ref
         if children is None:
@@ -490,8 +493,7 @@ class Node(IDObject):
             parents = {}
         self._parents = parents
         self._value = value
-        _id = f"{self.__class__.__name__}_{call_id}_{ref.functional_name}"
-        super().__init__(_id)
+
 
     def __hash__(self):
         return hash(self._id)
