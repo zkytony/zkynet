@@ -120,11 +120,11 @@ class Function(TemplateObject):
                 that are inputs to this function
                 on the computation graph.
         Output:
-           a FunctionNode, a number or array-like."""
+           a OperatorNode, a number or array-like."""
         raise NotImplementedError
 
     def _construct_input_nodes(self, *input_vals):
-        """input nodes to this FunctionNode.
+        """input nodes to this OperatorNode.
         Note: assume self._current_call_id is assigned"""
         input_nodes = []
         try:
@@ -168,14 +168,14 @@ class Function(TemplateObject):
             *input_vals: each input is the value of an input
                 that defines this function. Order matters.
                 This value is either just a value (e.g. numpy array),
-                an InputNode, or a FunctionNode.
+                an InputNode, or a OperatorNode.
             **call_args: call-time configurations to pass down
                  to call.
 
         Returns:
-            FunctionNode: an object that represents a non-leaf node
+            OperatorNode: an object that represents a non-leaf node
                 in the grounded computational graph.
-            or a ModuleGraph that wraps a FunctionNode; the ModuleGraph
+            or a ModuleGraph that wraps a OperatorNode; the ModuleGraph
                 is for the trigger function, which is what the user called.
                 (This means, from a user's perspective, always expect getting
                  back a ModuleGraph when you call a Module.)
@@ -190,7 +190,7 @@ class Operator(Function):
     hard code its derivatives. For such functions,
     we expect that the output of "call" should
     be a number, or array-like, instead of a
-    FunctionNode. That means, implementation
+    OperatorNode. That means, implementation
     of an Operator's forward pass does not depend
     or use other operators. (Note that __call__
     still, as defined, returns a Node object.)
@@ -202,7 +202,7 @@ class Operator(Function):
         output_val = self.call(*input_nodes, **call_args)
         if isinstance(output_val, Node):
             raise ValueError("The output of Operator's 'call' function must not be a Node")
-        output_node = FunctionNode(_GLOBAL_CALL_MANAGER.call_id, self,
+        output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
             input_nodes[i].add_parent(output_node, self.input_name(i))
@@ -227,7 +227,7 @@ class Module(Function):
         """
         If this Module is the trigger module, then
         we will return a ModuleGraph. Otherwise,
-        return a FunctionNode.
+        return a OperatorNode.
         """
         _GLOBAL_CALL_MANAGER.call_begin(self)
 
@@ -238,16 +238,16 @@ class Module(Function):
 
 
 
-        # Wrap the output value as a FunctionNode, and connect the graph.
-        if isinstance(output_val, FunctionNode):
+        # Wrap the output value as a OperatorNode, and connect the graph.
+        if isinstance(output_val, OperatorNode):
             # "call" returns likely the output of running "call" for some other
             # function.  We extract its value, yet need to preserve the computation
             # graph, i.e. output_val will be the child node.
-            output_node = FunctionNode(_GLOBAL_CALL_MANAGER.call_id, self,
+            output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                        output_val.value, [output_val])
             output_val.add_parent(output_node, "preserve")
         else:
-            output_node = FunctionNode(_GLOBAL_CALL_MANAGER.call_id, self,
+            output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                        output_val, input_nodes)
             for i in range(len(input_nodes)):
                 input_nodes[i].add_parent(output_node, self.input_name(i))
@@ -376,14 +376,14 @@ class Node(IDObject):
     Since it is a DAG, a node can have multiple children
     and multiple parents.
 
-    We distinguish two node types: InputNode and FunctionNode.
+    We distinguish two node types: InputNode and OperatorNode.
     Don't confuse InputNode with Input; The InputNode
     literally refers to a leaf node on the DAG, while Input
     is just a placeholder of input in a Function template.
 
-    The InputNode is a leaf node, while the FunctionNode
+    The InputNode is a leaf node, while the OperatorNode
     is not a leaf node. Both should be grounded with values.
-    The value of the FunctionNode represents the output
+    The value of the OperatorNode represents the output
     of the function under some InputNode instantiation.
 
     Note: the notion of 'child' and 'parent' might be
@@ -415,7 +415,7 @@ class Node(IDObject):
             ref (Function or Input): a reference to a Function or
                 an Input object that this Node instantiates for.
             children (list): list of children nodes of this node
-            parents (dict): maps from FunctionNode (parent) to a string that
+            parents (dict): maps from OperatorNode (parent) to a string that
                 indicates the name of the input to the parent function that
                 this node corresponds to.
         """
@@ -495,7 +495,7 @@ class InputNode(Node):
         return self._ref
 
 
-class FunctionNode(Node):
+class OperatorNode(Node):
     """A non-leaf node in the computational graph"""
     def __init__(self, call_id, fun, value, children, parents=None):
         """
@@ -529,7 +529,7 @@ class ModuleGraph:
     A ModuleGraph is a computational graph that
     is grounded when a Module is called. It stores
     a flat computational graph (by 'flat' we mean
-    that its internal FunctionNodes should only be
+    that its internal OperatorNodes should only be
     Operators.)
 
     Note that since a Module's call may involve
@@ -555,7 +555,7 @@ class ModuleGraph:
     # that represents the flat computational
     # graph for module instantiated with given
     # input values.
-    root: FunctionNode
+    root: OperatorNode
 
 
 ########## algorithms to process computational graphs ##########
