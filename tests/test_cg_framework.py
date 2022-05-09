@@ -53,8 +53,10 @@ def test_call_integrity():
     # Make sure nodes from different calls
     # have different call ids and different ids
     assert result1.call_id != result2.call_id
-    assert result1.id != result2.id
+    assert result1.root.id != result2.root.id
+    assert result1.value == result2.value
     assert result1 != result2
+
 
 ######## Equality tests ########################
 # Test: Equality of nodes. Two Node objects are equal if:
@@ -74,7 +76,7 @@ def test_node_equality():
     # If we overwrite the ID of two nodes that
     # are otherwise the same, then we should get equality.
     for n1 in all_nodes1:
-        if isinstance(n1, cg.FunctionNode):
+        if isinstance(n1, cg.OperatorNode):
             n1cp = n1.__class__(n1.call_id, n1._ref, n1.value,
                                 children=n1.children, parents=n1.parents)
         else:

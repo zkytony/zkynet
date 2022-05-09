@@ -236,19 +236,19 @@ class Module(Function):
         if isinstance(output_val, OperatorNode):
             if _GLOBAL_CALL_MANAGER.trigger_function.name == self.name:
                 # this is the trigger function;
-                return ModuleGraph(_GLOBAL_CALL_MANAGER.call_id,
+                output = ModuleGraph(_GLOBAL_CALL_MANAGER.call_id,
                                    self, output_val)
             else:
-                # this is not; so we pass on the OperatorNode
-                return output_val
+                # so we just return output_val (OperatorNode)
+                output = output_val
         else:
-            output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
-                                       output_val, input_nodes)
+            output = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
+                                  output_val, input_nodes)
             for i in range(len(input_nodes)):
                 input_nodes[i].add_parent(output_node, self.input_name(i))
 
         _GLOBAL_CALL_MANAGER.call_end(self)
-        return output_node
+        return output
 
 
 class Input(TemplateObject):
@@ -561,6 +561,16 @@ class ModuleGraph:
     @property
     def value(self):
         return self.root.value
+
+    def __hash__(self):
+        return hash(self.root.id)
+
+    def __eq__(self, other):
+        if isinstance(other, ModuleGraph):
+            return self.call_id == other.call_id\
+                and self.module.name == other.module.name\
+                and self.root == other.root
+        return False
 
 
 ########## algorithms to process computational graphs ##########
