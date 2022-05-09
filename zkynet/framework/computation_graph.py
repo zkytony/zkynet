@@ -175,6 +175,50 @@ class Function(TemplateObject):
             FunctionNode: an object that represents a non-leaf node
                 in the grounded computational graph.
         """
+        # The implementation is specific to Operator and Module. See below.
+        raise NotImplementedError
+
+
+class Operator(Function):
+    """
+    An operator is a function that we intend to
+    hard code its derivatives. For such functions,
+    we expect that the output of "call" should
+    be a number, or array-like, instead of a
+    FunctionNode. That means, implementation
+    of an Operator's forward pass does not depend
+    or use other operators. (Note that __call__
+    still, as defined, returns a Node object.)
+    """
+    def __call__(self, *input_vals, **call_args):
+        _GLOBAL_CALL_MANAGER.call_begin(self)
+
+        input_nodes = self._construct_input_nodes(*input_vals)
+        output_val = self.call(*input_nodes, **call_args)
+        if isinstance(output_val, Node):
+            raise ValueError("The output of Operator's 'call' function must not be a Node")
+        output_node = FunctionNode(_GLOBAL_CALL_MANAGER.call_id, self,
+                                   output_val, input_nodes)
+        for i in range(len(input_nodes)):
+            input_nodes[i].add_parent(output_node, self.input_name(i))
+
+        _GLOBAL_CALL_MANAGER.call_end(self)
+        return output_node
+
+
+class Module(Function):
+    """
+    A Module is a function that is intended to
+    be user-defined, complex functions whose
+    forward call consists of operators and other
+    modules. The gradient of this function is
+    automatically computed using autodiff.
+
+    There is a flat grounded computational graph
+    corresponding to a module that is created when
+    the module is called.
+    """
+    def __call__(self, *input_vals, **call_args):
         _GLOBAL_CALL_MANAGER.call_begin(self)
 
         input_nodes = self._construct_input_nodes(*input_vals)
@@ -196,32 +240,6 @@ class Function(TemplateObject):
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
-
-
-class Operator(Function):
-    """
-    An operator is a function that we intend to
-    hard code its derivatives. For such functions,
-    we expect that the output of "call" should
-    be a number, or array-like, instead of a
-    FunctionNode. That means, implementation
-    of an Operator's forward pass does not depend
-    or use other operators.
-    """
-
-
-class Module(Function):
-    """
-    A Module is a function that is intended to
-    be user-defined, complex functions whose
-    forward call consists of operators and other
-    modules. The gradient of this function is
-    automatically computed using autodiff.
-
-    There is a flat grounded computational graph
-    corresponding to a module that is created when
-    the module is called.
-    """
 
 
 class Input(TemplateObject):
