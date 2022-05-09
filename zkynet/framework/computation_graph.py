@@ -4,6 +4,7 @@ dynamically generated computational graph. Gradients
 are computed using automatic differentiation.
 """
 from .. import utils
+from dataclasses import dataclass
 
 ########## Auxiliary objects ##########
 class FunctionCallManager:
@@ -174,6 +175,10 @@ class Function(TemplateObject):
         Returns:
             FunctionNode: an object that represents a non-leaf node
                 in the grounded computational graph.
+            or a ModuleGraph that wraps a FunctionNode; the ModuleGraph
+                is for the trigger function, which is what the user called.
+                (This means, from a user's perspective, always expect getting
+                 back a ModuleGraph when you call a Module.)
         """
         # The implementation is specific to Operator and Module. See below.
         raise NotImplementedError
@@ -219,10 +224,19 @@ class Module(Function):
     the module is called.
     """
     def __call__(self, *input_vals, **call_args):
+        """
+        If this Module is the trigger module, then
+        we will return a ModuleGraph. Otherwise,
+        return a FunctionNode.
+        """
         _GLOBAL_CALL_MANAGER.call_begin(self)
 
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes, **call_args)
+
+
+
+
 
         # Wrap the output value as a FunctionNode, and connect the graph.
         if isinstance(output_val, FunctionNode):
@@ -509,6 +523,39 @@ class FunctionNode(Node):
         """computes the gradient of the function
         with respect to every input and """
 
+@dataclass(frozen=True)
+class ModuleGraph:
+    """
+    A ModuleGraph is a computational graph that
+    is grounded when a Module is called. It stores
+    a flat computational graph (by 'flat' we mean
+    that its internal FunctionNodes should only be
+    Operators.)
+
+    Note that since a Module's call may involve
+    calling another module, we don't actually
+    create a graph for that module. We only care
+    about the trigger function (i.e. the first Module),
+    similar to FunctionCallManager. As a result,
+    the FunctionCallManager will have the reference
+    to the ModuleGraph when a call ID is created.
+
+    Since the actual graph is captured by a Node,
+    this class is very simplistic, but it does serve
+    an important use.
+
+    This object is assumed to be immutable
+    """
+    call_id: str
+
+    # the trigger module
+    module: Module
+
+    # the root of the DAG
+    # that represents the flat computational
+    # graph for module instantiated with given
+    # input values.
+    root: FunctionNode
 
 
 ########## algorithms to process computational graphs ##########
