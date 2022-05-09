@@ -8,7 +8,7 @@ from zkynet.framework import cg, op
 
 description="testing CG framework"
 
-class MyTestModel1(cg.Function):
+class MyTestModel1(cg.Module):
     """A rather simple function that represents:
 
     f(x,w) = (x+w)*x^2
@@ -36,21 +36,23 @@ def test_call_integrity():
     m = MyTestModel1()
     result1 = m(3)
     result2 = m(3)
+    assert isinstance(result1, cg.ModuleGraph)
+    assert isinstance(result2, cg.ModuleGraph)
 
     # Make sure all nodes in one graph have the
     # same call id
-    all_nodes1 = cg.get_all_nodes(result1)
+    all_nodes1 = cg.get_all_nodes(result1.root)
     for n1 in all_nodes1:
         for n2 in all_nodes1:
-            assert n1._call_id == n2._call_id
-    all_nodes2 = cg.get_all_nodes(result2)
+            assert n1.call_id == n2.call_id
+    all_nodes2 = cg.get_all_nodes(result2.root)
     for n1 in all_nodes2:
         for n2 in all_nodes2:
-            assert n1._call_id == n2._call_id
+            assert n1.call_id == n2.call_id
 
     # Make sure nodes from different calls
     # have different call ids and different ids
-    assert result1._call_id != result2._call_id
+    assert result1.call_id != result2.call_id
     assert result1.id != result2.id
     assert result1 != result2
 
@@ -67,16 +69,16 @@ def test_node_equality():
     m = MyTestModel1()
     result1 = m(3)
     result2 = m(3)
-    all_nodes1 = cg.get_all_nodes(result1)
-    all_nodes2 = cg.get_all_nodes(result2)
+    all_nodes1 = cg.get_all_nodes(result1.root)
+    all_nodes2 = cg.get_all_nodes(result2.root)
     # If we overwrite the ID of two nodes that
     # are otherwise the same, then we should get equality.
     for n1 in all_nodes1:
         if isinstance(n1, cg.FunctionNode):
-            n1cp = n1.__class__(n1._call_id, n1._ref, n1.value,
+            n1cp = n1.__class__(n1.call_id, n1._ref, n1.value,
                                 children=n1.children, parents=n1.parents)
         else:
-            n1cp = n1.__class__(n1._call_id, n1._ref, n1.value,
+            n1cp = n1.__class__(n1.call_id, n1._ref, n1.value,
                                 parents=n1.parents)
         assert n1cp == n1
         for n2 in all_nodes2:

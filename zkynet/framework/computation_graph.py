@@ -124,8 +124,7 @@ class Function(TemplateObject):
         raise NotImplementedError
 
     def _construct_input_nodes(self, *input_vals):
-        """input nodes to this OperatorNode.
-        Note: assume self._current_call_id is assigned"""
+        """input nodes to this Function."""
         input_nodes = []
         try:
             for i in range(len(self._ordered_input_names)):
@@ -423,7 +422,7 @@ class Node(IDObject):
                 indicates the name of the input to the parent function that
                 this node corresponds to.
         """
-        self._call_id = call_id
+        self.call_id = call_id
         self._ref = ref
         if children is None:
             children = []

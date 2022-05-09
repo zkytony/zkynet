@@ -1,7 +1,7 @@
 import numpy as np
-from .computation_graph import Function, Variable
+from .computation_graph import Operator, Variable
 
-class Identity(Function):
+class Identity(Operator):
     def __init__(self):
         super().__init__("Identity", inputs=(Variable("x"),))
 
@@ -11,7 +11,7 @@ class Identity(Function):
     def grad(self, var):
         pass
 
-class Add(Function):
+class Add(Operator):
     def __init__(self):
         super().__init__("Add", inputs=(Variable("a"), Variable("b")))
 
@@ -19,7 +19,7 @@ class Add(Function):
         return a.value + b.value
 
 
-class Multiply(Function):
+class Multiply(Operator):
     def __init__(self):
         super().__init__("Multiply", inputs=(Variable("a"), Variable("b")))
 
@@ -27,7 +27,7 @@ class Multiply(Function):
         return a.value * b.value
 
 
-class Square(Function):
+class Square(Operator):
     def __init__(self):
         super().__init__("Square", inputs=(Variable("x"),))
 
