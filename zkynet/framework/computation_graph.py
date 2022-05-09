@@ -142,6 +142,14 @@ class Function(TemplateObject):
         return input_nodes
 
     def param_node(self, name):
+        # TODO: FIX; for Module, it should be able to
+        # access parameters defined in its sub-Modules;
+        # But this is only clear after the computational
+        # graph is built; so in a sense, it is a matter
+        # handled by ModuleGraph -- However, a function DOES
+        # maintain the parameter values for the parameters
+        # that define THIS function. So having a way to
+        # access those is natural.
         """Get an InputNode for the given parameter;
         Used to construct computational graph."""
         if name not in self._params:
@@ -150,6 +158,8 @@ class Function(TemplateObject):
         return InputNode(_GLOBAL_CALL_MANAGER.call_id, param, param.value)
 
     def param_val(self, n):
+        # TODO: FIX; for Module, it should be able to
+        # access parameters defined in its sub-Modules.
         return self._params[n].value
 
     def __call__(self, *input_vals, **call_args):
