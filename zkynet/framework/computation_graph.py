@@ -37,7 +37,7 @@ class FunctionCallManager:
         if self.call_id is None:
             raise ValueError("No call is happening.")
         if self.trigger_function.name != fun.name:
-            # we only need to track whether the
+            # we only need to track hwether the
             # trigger function has finished
             pass
         else:
@@ -60,6 +60,21 @@ class TemplateObject:
         """
         raise NotImplementedError
 
+    @property
+    def name(self):
+        """
+        The string that identifies the VARAIBLE name (or ENTITY)
+        that this template object represents. For example,
+        we could have two Function objects that represent
+        the same function but we care about their outputs
+        as separate variables. Then, these two Function objects
+        should have the same 'functional_name' but different
+        'name'.
+
+        Assumption: 'name' should not contain any dot '.' character.
+        """
+        raise NotImplementedError
+
 
 class Function(TemplateObject):
     """
@@ -68,21 +83,22 @@ class Function(TemplateObject):
     internal parameters; the values of these parameters
     are kept tracked of in the model.
     """
-    def __init__(self, name, inputs, params=None):
+    def __init__(self, inputs, params=None):
         """
         Args:
             inputs (tuple): a tuple of ordered inputs, each a Variable.
             params (list/set-like): parameters, either a Parameter or a Constant.
                 order does not matter
         """
-        self._name = name
+        self._functional_name = utils.fullname(self)
+        self._name = "{}{}".format(self._functional_name, utils.unique_id(length=3))
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
-        self._ordered_input_names = tuple(inp.name for inp in inputs)
+        self._ordered_input_names = tuple(inp.short_name for inp in inputs)
         self._inputs = {}
         for inp in inputs:
             inp.fun = self
-            self._inputs[inp.name] = inp
+            self._inputs[inp.short_name] = inp
 
         if params is None:
             params = set()
@@ -92,18 +108,22 @@ class Function(TemplateObject):
         self._params = {}
         for param in params:
             param.fun = self
-            self._params[param.name] = param
+            self._params[param.short_name] = param
 
     @property
     def name(self):
+        """The variable name of a function should be
+        thought of as the variable that represents
+        the function's output. Two Functions that
+        represent two different variables have different
+        names; But they share the same "functional name"
+        """
         return self._name
 
     @property
     def functional_name(self):
-        """
-        The function's name
-        """
-        return self.name
+        """Function name without id"""
+        return self._functional_name
 
     @property
     def inputs(self):
@@ -124,43 +144,46 @@ class Function(TemplateObject):
         raise NotImplementedError
 
     def _construct_input_nodes(self, *input_vals):
-        """input nodes to this Function."""
+        """input nodes to this Function.
+
+        This is used at any step when buidling an
+        OperatorNode during the computational graph
+        instantiation. Each node in the output list
+        correspond to both:
+         (1) a slot in the inputs that define this function.
+         (2) an element in 'input_vals'
+
+        Note that an element in 'input_vals' could be:
+        - a number or array
+        - a Parameter or a Constant
+        - an InputNode or OperatorNode
+        """
         input_nodes = []
         try:
             for i in range(len(self._ordered_input_names)):
                 input_val = input_vals[i]
-                input_name = self._ordered_input_names[i]
-                if not isinstance(input_val, Node):
+                if isinstance(input_val, Node):
+                    node = input_val
+                elif isinstance(input_val, Input):
+                    node = input_val.to_node()
+                else:
+                    # input_val is likely a number or array
+                    input_name = self._ordered_input_names[i]
                     node = InputNode(_GLOBAL_CALL_MANAGER.call_id,
                                      self.inputs[input_name],
                                      input_val)
-                    input_nodes.append(node)
-                else:
-                    input_nodes.append(input_val)
+                input_nodes.append(node)
         except IndexError:
             raise ValueError("When calling a function, all its inputs must be instantiated.")
         return input_nodes
 
-    def param_node(self, name):
-        # TODO: FIX; for Module, it should be able to
-        # access parameters defined in its sub-Modules;
-        # But this is only clear after the computational
-        # graph is built; so in a sense, it is a matter
-        # handled by ModuleGraph -- However, a function DOES
-        # maintain the parameter values for the parameters
-        # that define THIS function. So having a way to
-        # access those is natural.
-        """Get an InputNode for the given parameter;
-        Used to construct computational graph."""
-        if name not in self._params:
+    def param(self, short_name):
+        """Returns the Parameter corresponding to
+        the given short_name, used when initializing
+        this Function."""
+        if short_name not in self._params:
             raise ValueError(f"{name} is not a parameter.")
-        param = self._params[name]
-        return InputNode(_GLOBAL_CALL_MANAGER.call_id, param, param.value)
-
-    def param_val(self, n):
-        # TODO: FIX; for Module, it should be able to
-        # access parameters defined in its sub-Modules.
-        return self._params[n].value
+        return self._params[short_name]
 
     def __call__(self, *input_vals, **call_args):
         """The function is called (forward-pass).
@@ -177,7 +200,7 @@ class Function(TemplateObject):
             *input_vals: each input is the value of an input
                 that defines this function. Order matters.
                 This value is either just a value (e.g. numpy array),
-                an InputNode, or a OperatorNode.
+                a Parameter or Constant, an InputNode, or a OperatorNode.
             **call_args: call-time configurations to pass down
                  to call.
 
@@ -265,18 +288,20 @@ class Input(TemplateObject):
     """An Input is an abstract template
     for an input to a function, but without
     a value."""
-    def __init__(self, name, input_type):
+    def __init__(self, short_name, input_type):
         """
         Args:
-            name (str): name of this input (e.g. 'x'),
+            short_name (str): short name of this input (e.g. 'x'),
                 should indicate its role in the function
-                that uses it.
+                that uses it. Note that the actual variable
+                name of this Input will be prefixed (i.e. namespaced)
+                by the function's variable name.
             input_type (str): identifies the type of input,
                 for example 'variable' means it's based on
                 observations, and 'parameter' means it is
                 a function's self-maintained value.
         """
-        self.name = name
+        self._short_name = short_name
         self.input_type = input_type
         self._value = None
         # Should be set upon the corresponding Function's __init__
@@ -306,14 +331,38 @@ class Input(TemplateObject):
         self._fun = f
 
     @property
+    def name(self):
+        """
+        Name that represents the variable after being assigned to a function
+        """
+        if self._fun is None:
+            raise ValueError("Input's function is NOT set. No variable to name.")
+        return f"{self._fun.name}.{self._short_name}"
+
+    @property
+    def short_name(self):
+        """The short name given at construction that does not
+        uniquely identify this Input, but does identify this
+        input with respect to its Function."""
+        return self._short_name
+
+    @property
     def functional_name(self):
         """
-        The name that identifies both the function and the role
+        The functional name that identifies both the function and the role
         this input plays to that function.
         """
         if self._fun is None:
             raise ValueError("Input's function is NOT set. No functional name.")
-        return f"{self._fun.name}-{self.name}"
+        return f"{self._fun.functional_name}.{self._short_name}"
+
+    def to_node(self):
+        """convert to InputNode; assuming this is called during a
+        function call (so there would be a call id assigned to this
+        InputNode)"""
+        return InputNode(_GLOBAL_CALL_MANAGER.call_id,
+                         self,
+                         self.value)
 
 
 class Variable(Input):
