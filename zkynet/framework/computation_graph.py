@@ -685,6 +685,34 @@ class ModuleGraph:
                 and self.root == other.root
         return False
 
+    def back(self):
+        """
+        Backpropagates gradients to every node in
+        the computational graph. Mathematically,
+        the gradient at each node is dF/dv where
+        F is the variable at the root of the ModuleGraph,
+        and v is the variable at the node.
+
+        After this step, all nodes in the graph will
+        have a "grad" property that stores dF/dv.
+        """
+        # This can be implemented through message passing
+        # over the graph. At any time, there is a number
+        # of "passers", a number of "receivers", and a
+        # number of 'waiters'. A passer has received messages
+        # from all of its parents, so it knows its gradient
+        # and starts converting its children from 'waiters'
+        # into 'receivers,' if not already. This continues
+        # until all nodes are "passers."  Note that 'waiters'
+        # refers to all nodes that we haven't reached or
+        # ones that are children of 'receivers.'
+
+
+
+
+
+
+
 
 ########## algorithms to process computational graphs ##########
 def get_input_nodes(root):
