@@ -263,8 +263,6 @@ class Operator(Function):
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
             input_nodes[i].add_parent(output_node, self.input_name(i))
-            if isinstance(input_nodes[i].ref, Parameter):
-                print("HELLO! I am", input_nodes[i].id, ". my parents are:", input_nodes[i].parents)
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
