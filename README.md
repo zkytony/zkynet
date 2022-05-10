@@ -9,11 +9,9 @@ Run `setup.sh` to create and activate a designated virtualenv,
 if you so desire. You should then install:
 
 ```
-#+begin_src
 pip install torch torchvision
 pip install matplotlib
 pip install jupyter
-#+end_src
 ```
 
 ### Install JAX
