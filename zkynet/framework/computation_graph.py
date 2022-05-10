@@ -117,11 +117,10 @@ class Function(TemplateObject):
         self._name = "{}{}".format(self._functional_name, utils.unique_id(length=3))
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
-        self._ordered_input_names = tuple(inp.short_name for inp in inputs)
-        self._inputs = {}
-        for inp in inputs:
+
+        self._inputs = inputs  # will maintain the order
+        for inp in self._inputs:
             inp.fun = self
-            self._inputs[inp.short_name] = inp
 
         if params is None:
             params = set()
@@ -159,7 +158,7 @@ class Function(TemplateObject):
         return self._inputs
 
     def input_name(self, i):
-        return self._ordered_input_names[i]
+        return self._inputs[i].name
 
     def call(self, *input_nodes, **call_args):
         """Function to be overriden
@@ -189,7 +188,7 @@ class Function(TemplateObject):
         """
         input_nodes = []
         try:
-            for i in range(len(self._ordered_input_names)):
+            for i in range(len(self._inputs)):
                 input_val = input_vals[i]
                 if isinstance(input_val, Node):
                     node = input_val
@@ -198,8 +197,7 @@ class Function(TemplateObject):
                 else:
                     # input_val is likely a number or array;
                     # it has a corresponding variable
-                    input_name = self._ordered_input_names[i]
-                    variable_input = self.inputs[input_name]
+                    variable_input = self._inputs[i]
                     assert isinstance(variable_input, Variable)
                     node = _input_to_node(variable_input,
                                           value=input_val)

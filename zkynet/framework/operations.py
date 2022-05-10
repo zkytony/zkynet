@@ -15,7 +15,6 @@ class Identity(Operator):
         return 1
 
 
-
 class Add(Operator):
     def __init__(self):
         super().__init__(inputs=(Variable("a"), Variable("b")))
