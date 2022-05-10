@@ -339,7 +339,7 @@ class Module(Function):
         return output
 
     @classmethod
-    def build(functional_name, call_func, inputs, params=None):
+    def build(cls, functional_name, call_func, inputs, params=None):
         """
         Allows building a Module with a custom call function.
 
