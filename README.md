@@ -2,7 +2,7 @@
 
 ## Examples
 
-### Proof-of-Concept Model
+### Proof-of-concept model
 
 1. Define a simple model for the function `f(x) = (x+w)*x^2` where `x` is an input and `w` is a parameter
 
@@ -88,6 +88,118 @@
     result.grad(m.input("x"))  # obtain dm/dx
     # x
     ```
+
+### Visualizing computational graph
+You can visualize a computational graph as
+follows:
+```python
+from zkynet.visual import plot_cg
+
+m = SimpleModel()
+result = m(3)
+plot_cg(result.root, wait=2, title="simpel model")
+```
+This shows:
+
+TODO
+
+
+As a more useful example, we will visualize the computational graph
+for a few models. First, let's define a few more complex
+models that are composed of the `SimpleModel`.
+There are four cases in total:
+
+**NO weight sharing, NO input sharing:**
+```python
+class CompositeModel_NoWeightSharing_DifferentInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),
+                                 cg.Variable("x2")))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel()
+        self._m2 = SimpleModel()
+
+    def call(self, x1, x2):
+        a = self._m1(x1)
+        b = self._m2(x2)
+        return op.add(a, b)
+
+m = CompositeModel_NoWeightSharing_DifferentInputs()
+result = m(3, 4)
+plot_cg(result.root, wait=2, title="NoWeightSharing_DifferentInputs")
+```
+This generates:
+
+TODO
+
+**YES Weight sharing, NO input sharing:**
+```python
+class CompositeModel_WeightSharing_DifferentInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),
+                                 cg.Variable("x2")))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel(w0=2)
+
+    def call(self, x1, x2):
+        a = self._m1(x1)
+        b = self._m1(x2)
+        return op.add(a, b)
+
+m = CompositeModel_WeightSharing_DifferentInputs()
+result = m(3, 3)
+plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_**Different**Inputs")
+```
+This generates:
+
+TODO
+
+**NO weight sharing, YES sharing inputs:**
+```python
+class CompositeModel_NoWeightSharing_SameInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel()
+        self._m2 = SimpleModel()
+
+    def call(self, x1):
+        a = self._m1(x1)
+        b = self._m2(x1)
+        return op.add(a, b)
+
+m = CompositeModel_NoWeightSharing_SameInputs()
+result = m(3, 4)
+plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_**No**WeightSharing_**Same**Inputs")
+```
+This generates:
+
+TODO
+
+**YES weight sharing, YES sharing inputs:**
+```python
+class CompositeModel_WeightSharing_SameInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel()
+
+    def call(self, x1):
+        a = self._m1(x1)
+        b = self._m1(x1)
+        return op.add(a, b)
+
+m = CompositeModel_WeightSharing_SameInputs()
+result = m(3, 4)
+plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_**Same**Inputs")
+```
+This generates:
+
+TODO
 
 
 ## Installation
