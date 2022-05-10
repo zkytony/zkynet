@@ -533,15 +533,19 @@ class Node(IDObject):
         _id = self.__class__.makeID(call_id, ref)
         super().__init__(_id)
 
-        self.call_id = call_id
-        self._ref = ref
         if children is None:
             children = []
-        self._children = children
         if parents is None:
             parents = {}
+
+        self.call_id = call_id
+        self._ref = ref
+        self._children = children
         self._parents = parents
         self._value = value
+        # maps from parent to the partial gradient sent from the parent
+        self._gradients_from_parents = {}
+        self._gvalue = None
 
     @classmethod
     def makeID(cls, call_id, ref):
@@ -563,7 +567,13 @@ class Node(IDObject):
 
     @property
     def value(self):
+        """forward pass value stored in this node"""
         return self._value
+
+    @property
+    def gvalue(self):
+        """the gradient dF/dv where F is the trigger function and v is self"""
+        return self._gvalue
 
     def isleaf(self):
         return len(self._children) == 0
@@ -582,6 +592,21 @@ class Node(IDObject):
 
     def add_parent(self, parent, parent_input_name):
         self._parents[parent] = parent_input_name
+
+    def receive(self, parent, gvalue):
+        """receives gradient value from parent;
+        This value represents dF/dv where v is the
+        variable represented by 'self'"""
+        if parent not in self._parents:
+            raise ValueError(f"The node {parent} is not my parent.")
+        self._gradients_from_parents[parent] = gvalue
+
+    def received_messages_from_all_parents(self):
+        return len(self._gradients_from_parents) == self._parents
+
+    def update_gvalue(self):
+        self._gvalue = sum(self._gradients_from_parents[p]
+                           for p in self._parents)
 
     def __str__(self):
         parents_str = self._get_parents_str()
@@ -635,9 +660,27 @@ class OperatorNode(Node):
     def operator(self):
         return self._ref
 
-    def grad(self):
-        """computes the gradient of the function
-        with respect to every input and """
+    def send(self, child, gvalue):
+        """
+        sends dF/dc (where F is the trigger function) to the child
+        """
+        child.receive(self, gvalue)
+
+    def gradient(self, child):
+        """computes the gradient of the function with respect to the
+        child at 'child_index'.  Mathematically, suppose the
+        operator node represents variable v, and the child
+        represents variable c, then this computes dv/dc
+
+        Args:
+            child_index (int): Index of child
+
+        Returns:
+            number or array
+        """
+        self.operator.gradient_function(child_index)#????
+        # TODO
+
 
 @dataclass(frozen=True)
 class ModuleGraph:
@@ -696,16 +739,44 @@ class ModuleGraph:
         After this step, all nodes in the graph will
         have a "grad" property that stores dF/dv.
         """
-        # This can be implemented through message passing
-        # over the graph. At any time, there is a number
-        # of "passers", a number of "receivers", and a
-        # number of 'waiters'. A passer has received messages
-        # from all of its parents, so it knows its gradient
-        # and starts converting its children from 'waiters'
-        # into 'receivers,' if not already. This continues
-        # until all nodes are "passers."  Note that 'waiters'
-        # refers to all nodes that we haven't reached or
-        # ones that are children of 'receivers.'
+        # This can be implemented through message passing over
+        # the graph. At any time, there is (1) a number of
+        # "senders", (2) a number of "receivers", (3) a number of
+        # 'waiters', (4) a number of "done senders".  A sender
+        # has received messages from all of its parents, so it
+        # knows its gradient and starts converting its children
+        # from 'waiters' into 'receivers,' if not already.  This
+        # continues until all nodes are "done senders."  A
+        # "sender" becomes a "done sender" if it has finished
+        # passing a message to all its children.  Note that
+        # 'waiters' refers to all nodes that we haven't reached
+        # or ones that are children of 'receivers.'  Both 'waiter'
+        # and 'done sender' are an abstract concept we don't need
+        # to track.
+        _senders = []
+        _receivers = set(self.root)
+        while not (len(_senders) == 0 and len(_receivers) == 0):
+            # message passing
+            while _senders:
+                sender = _senders.pop()
+                assert isinstance(sender, OperatorNode)
+                for child_index, child in enumerate(sender.children):
+                    dpdc = sender.gradient(child)
+                    sender.send(child, sender.gvalue * dpdc)   # TODO: consider logarithm space
+                    _receivers.add(child)
+            # conversion from receiver to sender
+            _still_receivers = set()
+            for receiver in _receivers:
+                if receiver.received_messages_from_all_parents():
+                    receiver.update_gvalue()
+                    if isinstance(receiver, OperatorNode):
+                        _senders.append(receiver)
+                else:
+                    _still_receivers.add(receiver)
+            _receivers = _still_receivers
+
+
+
 
 
 
