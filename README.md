@@ -103,7 +103,7 @@ plot_cg(result.root, wait=2, title="simpel model")
 ```
 This shows:
 
-TODO
+![cg-simple](https://user-images.githubusercontent.com/7720184/167731761-bf651910-1a2a-463e-9384-41a4295c9f10.png)
 
 
 As a more useful example, we will visualize the computational graph
@@ -133,7 +133,8 @@ plot_cg(result.root, wait=2, title="NoWeightSharing_DifferentInputs")
 ```
 This generates:
 
-TODO
+![cg-comp-NN](https://user-images.githubusercontent.com/7720184/167731793-d814fa88-3a23-44ae-92b5-6c7178718b47.png)
+
 
 **YES Weight sharing, NO input sharing:**
 ```python
@@ -156,7 +157,8 @@ plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_
 ```
 This generates:
 
-TODO
+![cg-comp-YN](https://user-images.githubusercontent.com/7720184/167731827-8fe3555c-94f8-461c-92e1-48b4928eb64b.png)
+
 
 **NO weight sharing, YES sharing inputs:**
 ```python
@@ -179,7 +181,10 @@ plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_**No**WeightSh
 ```
 This generates:
 
-TODO
+![cg-comp-NY](https://user-images.githubusercontent.com/7720184/167731855-7520836f-89ca-4eb6-8104-50c109c51b9b.png)
+
+
+
 
 **YES weight sharing, YES sharing inputs:**
 ```python
@@ -201,7 +206,9 @@ plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_
 ```
 This generates:
 
-TODO
+![cg-comp-YY](https://user-images.githubusercontent.com/7720184/167731875-3d7f4476-e8a7-4037-b4a7-168dc336e77e.png)
+
+
 
 
 ## Installation
