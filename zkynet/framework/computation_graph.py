@@ -7,10 +7,10 @@ from .. import utils
 from dataclasses import dataclass
 
 ########## Auxiliary objects ##########
-class FunctionCallManager:
+class CallSessionManager:
     """
     In order to enforce independence between computational
-    graphs from different calls, FunctionCallManager will
+    graphs from different calls, CallSessionManager will
     maintain the call ID of the current call, which is assigned
     to all nodes that are created during the call.
 
@@ -45,7 +45,7 @@ class FunctionCallManager:
             # So, we are done.
             self.call_id = None
             self.trigger_function = None
-_GLOBAL_CALL_MANAGER = FunctionCallManager()
+_GLOBAL_CALL_MANAGER = CallSessionManager()
 
 
 ########## Template objects ###########
@@ -124,6 +124,12 @@ class Function(TemplateObject):
     def functional_name(self):
         """Function name without id"""
         return self._functional_name
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self)
 
     @property
     def inputs(self):
@@ -237,7 +243,10 @@ class Operator(Function):
         output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
+            print(input_nodes[i].parents)
             input_nodes[i].add_parent(output_node, self.input_name(i))
+            if isinstance(input_nodes[i].ref, Parameter):
+                print("HELLO! I am", input_nodes[i].id, ". my parents are:", input_nodes[i].parents)
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
@@ -535,6 +544,7 @@ class Node(IDObject):
         return self._children
 
     def add_parent(self, parent, parent_input_name):
+        print(self.parents)
         self._parents[parent] = parent_input_name
 
     def __str__(self):
@@ -606,7 +616,7 @@ class ModuleGraph:
     calling another module, we don't actually
     create a graph for that module. We only care
     about the trigger function (i.e. the first Module),
-    similar to FunctionCallManager.
+    similar to CallSessionManager.
 
     Since the actual graph is captured by a Node,
     this class is very simplistic, but it does serve
