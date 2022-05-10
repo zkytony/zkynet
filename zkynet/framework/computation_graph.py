@@ -2,6 +2,8 @@
 A framework to define functions with corresponding,
 dynamically generated computational graph. Gradients
 are computed using automatic differentiation.
+
+author: Kaiyu Zheng
 """
 from .. import utils
 from dataclasses import dataclass
