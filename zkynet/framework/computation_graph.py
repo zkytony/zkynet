@@ -872,10 +872,6 @@ class ModuleGraph:
 
         After this step, all nodes in the graph will
         have a "grad" property that stores dF/dv.
-
-        Args:
-            logspace (bool): If True, then the gradient values
-                stored in each node. (Default: True)
         """
         # This can be implemented through message passing over
         # the graph. At any time, there is (1) a number of
