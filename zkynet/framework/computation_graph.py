@@ -708,8 +708,15 @@ class Node(IDObject):
         return len(self._gradients_from_parents) == len(self._parents)
 
     def update_gvalue(self):
-        self._gvalue = sum(self._gradients_from_parents[p]
-                           for p in self._parents)
+        """update gvalue to be the sum of gradients from
+        parents. If there is no parent, imagine there is
+        an OperatorNode that contains an identity function
+        as the parent so the gradient is 1 (i.e. dF/dF = 1)"""
+        if len(self._parents) == 0:
+            self._gvalue = 1
+        else:
+            self._gvalue = sum(self._gradients_from_parents[p]
+                               for p in self._parents)
 
     def __str__(self):
         parents_str = self._get_parents_str()
@@ -855,7 +862,7 @@ class ModuleGraph:
                 and self.root == other.root
         return False
 
-    def back(self, logspace=True):
+    def back(self):
         """
         Backpropagates gradients to every node in
         the computational graph. Mathematically,
@@ -893,10 +900,7 @@ class ModuleGraph:
                 assert isinstance(sender, OperatorNode)
                 for child in sender.children:
                     dpdc = sender.grad(child)
-                    if logspace:
-                        sender.send(child, np.log(sender.gvalue) + np.log(dpdc))
-                    else:
-                        sender.send(child, sender.gvalue * dpdc)
+                    sender.send(child, sender.gvalue * dpdc)
                     _receivers.add(child)
             # conversion from receiver to sender
             _still_receivers = set()
