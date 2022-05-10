@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-zkynet: exploring deep learning basics
-======================================
+zkynet: exploring deep learning basics through implementations.
+===============================================================
 
 .. toctree::
    :maxdepth: 2
