@@ -210,6 +210,40 @@ This generates:
 
 
 
+### Writing an Operator
+Below shows an example of implementing a multiplication
+operator, called `Multiply`.
+
+```python
+from zkynet.framework import cg
+
+class Multiply(cg.Operator):
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("a"), cg.Variable("b")))
+
+    def call(self, a, b):
+        return a.value * b.value
+
+    def _gradfn(self, inpt):
+        def _a_grad(a, b):
+            return b.value
+        def _b_grad(a, b):
+            return a.value
+        if inpt.short_name == "a":
+            return _a_grad
+        elif inpt.short_name == "b":
+            return _b_grad
+        else:
+            raise ValueError(
+                f"Unknown input for {self.functional_name}: {inpt.short_name}")
+```
+
+Note that the two methods to override are `call` (forward) and
+`_gradfn` (backward).  The function `call` can return either a number
+or array or an OperatorNode. The function `_gradfn` should return _a
+function_ that represents the gradient function, which takes in the
+same inputs as the operator.
+
 
 ## Installation
 

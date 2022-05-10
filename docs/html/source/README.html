@@ -43,6 +43,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#proof-of-concept-model">Proof-of-concept model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#composite-models-and-visualization">Composite models and visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#writing-an-operator">Writing an Operator</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
@@ -268,6 +269,39 @@ There are four cases in total:</p>
 </div>
 <p>This generates:</p>
 <p><img alt="cg-comp-YY" src="https://user-images.githubusercontent.com/7720184/167731875-3d7f4476-e8a7-4037-b4a7-168dc336e77e.png" /></p>
+</section>
+<section id="writing-an-operator">
+<h3>Writing an Operator<a class="headerlink" href="#writing-an-operator" title="Permalink to this headline"></a></h3>
+<p>Below shows an example of implementing a multiplication
+operator, called <code class="docutils literal notranslate"><span class="pre">Multiply</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">zkynet.framework</span> <span class="kn">import</span> <span class="n">cg</span>
+
+<span class="k">class</span> <span class="nc">Multiply</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">cg</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_a_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">def</span> <span class="nf">_b_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_a_grad</span>
+        <span class="k">elif</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_b_grad</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown input for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that the two methods to override are <code class="docutils literal notranslate"><span class="pre">call</span></code> (forward) and
+<code class="docutils literal notranslate"><span class="pre">_gradfn</span></code> (backward).  The function <code class="docutils literal notranslate"><span class="pre">call</span></code> can return either a number
+or array or an OperatorNode. The function <code class="docutils literal notranslate"><span class="pre">_gradfn</span></code> should return <em>a
+function</em> that represents the gradient function, which takes in the
+same inputs as the operator.</p>
 </section>
 </section>
 <section id="installation">
