@@ -88,7 +88,7 @@ Exploring deep learning basics through implementations.
     result.grad(m.param("w"))  # obtain dm/dw
     # 9
     result.grad(m.input("x"))  # obtain dm/dx
-    # x
+    # 33
     ```
 
 ### Composite models and visualization
