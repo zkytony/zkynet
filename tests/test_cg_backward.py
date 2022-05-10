@@ -59,10 +59,10 @@ def test_model1_gradient():
     for input_node in input_nodes:
         if input_node.ref.short_name == "x":
             # dF/dx = 6w+27 = 33
-            assert np.exp(input_node.gvalue) == 33
+            assert input_node.gvalue == 33
         elif input_node.ref.short_name == "w":
             # dF/dw = x^2 = 9
-            assert np.exp(input_node.gvalue) == 9
+            assert input_node.gvalue == 9
         else:
             raise ValueError(f"Unexpected input node to module {input_node}")
 
