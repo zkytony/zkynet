@@ -167,7 +167,7 @@ class Function(TemplateObject):
     def input_name(self, i):
         return self._inputs[i].name
 
-    def call(self, *input_nodes, **call_args):
+    def call(self, *input_nodes):
         """Function to be overriden
 
         Args:
@@ -221,7 +221,7 @@ class Function(TemplateObject):
             raise ValueError(f"{name} is not a parameter.")
         return self._params[short_name]
 
-    def __call__(self, *input_vals, **call_args):
+    def __call__(self, *input_vals):
         """The function is called (forward-pass).
         A computational graph is dynamically created.
         The input_vals will be converted (if not already)
@@ -263,11 +263,11 @@ class Operator(Function):
     or use other operators. (Note that __call__
     still, as defined, returns a Node object.)
     """
-    def __call__(self, *input_vals, **call_args):
+    def __call__(self, *input_vals):
         _GLOBAL_CALL_MANAGER.call_begin(self)
 
         input_nodes = self._construct_input_nodes(*input_vals)
-        output_val = self.call(*input_nodes, **call_args)
+        output_val = self.call(*input_nodes)
         if isinstance(output_val, Node):
             raise ValueError("The output of Operator's 'call' function must not be a Node")
         output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
@@ -335,13 +335,13 @@ class Module(Function):
         super().__init__(inputs, params=params, functional_name=functional_name)
         self._call_fun = call_fun
 
-    def call(self, *input_nodes, **call_args):
+    def call(self, *input_nodes):
         if self._call_fun is None:
             raise NotImplementedError
         else:
-            return self._call_fun(*input_nodes, **call_args)
+            return self._call_fun(*input_nodes)
 
-    def __call__(self, *input_vals, **call_args):
+    def __call__(self, *input_vals):
         """
         If this Module is the trigger function, then
         we will return a ModuleGraph. Otherwise,
@@ -350,7 +350,7 @@ class Module(Function):
         _GLOBAL_CALL_MANAGER.call_begin(self)
 
         input_nodes = self._construct_input_nodes(*input_vals)
-        output_val = self.call(*input_nodes, **call_args)
+        output_val = self.call(*input_nodes)
 
         if isinstance(output_val, OperatorNode):
             if _GLOBAL_CALL_MANAGER.trigger_function.name == self.name:

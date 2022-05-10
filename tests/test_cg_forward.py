@@ -98,28 +98,28 @@ def test_visualize_cg():
     assert m._params["w"] == 1  # initial value
     x = np.array([3])
     result = m(x)
-    plot_cg(result.root, wait=4, title="test_visualize_cg (simple)")
+    plot_cg(result.root, wait=2, title="test_visualize_cg (simple)")
 
 
 def test_visualize_CompositeModel_NoWeightSharing_DifferentInputs():
     m = CompositeModel_NoWeightSharing_DifferentInputs()
     result = m(3, 4)
-    plot_cg(result.root, wait=4, title="test_visualize_**No**WeightSharing_**Different**Inputs")
+    plot_cg(result.root, wait=2, title="test_visualize_**No**WeightSharing_**Different**Inputs")
 
 def test_visualize_CompositeModel_WeightSharing_DifferentInputs():
     m = CompositeModel_WeightSharing_DifferentInputs()
     result = m(3, 3)
-    plot_cg(result.root, wait=4, title="test_visualize_CompositeModel_WeightSharing_**Different**Inputs")
+    plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_**Different**Inputs")
 
 def test_visualize_CompositeModel_NoWeightSharing_SameInputs():
     m = CompositeModel_NoWeightSharing_SameInputs()
     result = m(3, 4)
-    plot_cg(result.root, wait=4, title="test_visualize_CompositeModel_**No**WeightSharing_**Same**Inputs")
+    plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_**No**WeightSharing_**Same**Inputs")
 
 def test_visualize_CompositeModel_WeightSharing_SameInputs():
     m = CompositeModel_WeightSharing_SameInputs()
     result = m(3, 4)
-    plot_cg(result.root, wait=4, title="test_visualize_CompositeModel_WeightSharing_**Same**Inputs")
+    plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_**Same**Inputs")
 
 
 def run():
