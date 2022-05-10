@@ -114,7 +114,7 @@ class Function(TemplateObject):
         self._functional_name = functional_name
         if functional_name is None:
             self._functional_name = utils.fullname(self)
-        self._name = "{}{}".format(self._functional_name, utils.unique_id(length=3))
+        self._name = "{}@{}".format(self._functional_name, utils.unique_id(length=3))
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
 
@@ -162,7 +162,7 @@ class Function(TemplateObject):
         """Returns a tuple of Inputs aligned with self._inputs
         except that the 'fun' property of each is not assigned;
         That means those inputs could be used for other functions."""
-        return (inpt.copy_nofun() for inpt in self.inputs)
+        return tuple(inpt.copy_nofun() for inpt in self.inputs)
 
     def input_name(self, i):
         return self._inputs[i].name
@@ -291,10 +291,10 @@ class Operator(Function):
             inpt (Input): the gradient taken with respect for.
         """
         return Module.build(f"D{self.functional_name}#{inpt.short_name}",
-                            self._gradfn,
+                            self._gradfn(inpt),
                             self.inputs_nofun)
 
-    def _gradfn(self, inpt, *input_vals):
+    def _gradfn(self, inpt):
         """
         Returns the 'call_fun' used when building a Module;
         TO BE OVERRIDDEN.
@@ -304,6 +304,8 @@ class Operator(Function):
             *input_vals (list-like): the values to input when
                 calling the gradient function.  Recall that
                 df(a,b)/da could be written as df/da(a,b).
+        Returns:
+            a function that takes in *self.inputs
         """
         raise NotImplementedError
 
@@ -362,7 +364,7 @@ class Module(Function):
             output = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                   output_val, input_nodes)
             for i in range(len(input_nodes)):
-                input_nodes[i].add_parent(output_node, self.input_name(i))
+                input_nodes[i].add_parent(output, self.input_name(i))
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output
@@ -415,7 +417,10 @@ class Input(TemplateObject):
         return self._value
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.name}, {self.value})"
+        if self._fun is None:
+            return f"{self.__class__.__name__}(NOFUNC.{self.short_name}, {self.value})"
+        else:
+            return f"{self.__class__.__name__}({self.name}, {self.value})"
 
     def __repr__(self):
         return str(self)

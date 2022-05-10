@@ -22,15 +22,15 @@ class Add(Operator):
     def call(self, a, b):
         return a.value + b.value
 
-    def _gradfn(self, inpt, a, b):
+    def _gradfn(self, inpt):
         def _a_grad(a, b):
             return 1
         def _b_grad(a, b):
             return 1
         if inpt.short_name == "a":
-            return _a_grad(a, b)
+            return _a_grad
         elif inpt.short_name == "b":
-            return _b_grad(a, b)
+            return _b_grad
         else:
             raise ValueError(f"Unknown input {inpt.name}")
 
