@@ -7,6 +7,8 @@ Requires graphviz Python package: https://github.com/xflr6/graphviz.
 """
 from .framework import cg
 import graphviz
+import signal
+import cv2
 
 def _add_node(dot, node):
     return dot.node(node.id, _node_label(node))
@@ -23,7 +25,8 @@ def _node_label(node):
     return node_label
 
 
-def plot_cg(root, save_path="/tmp/cg", quiet=True):
+def plot_cg(root, save_path="/tmp/cg",
+            quiet=True, view=True, wait=0, title=None):
     """
     Visualize the computational graph headed by 'root'
 
@@ -32,8 +35,14 @@ def plot_cg(root, save_path="/tmp/cg", quiet=True):
         save_path (str) path to file to save. The resulting
             file name would be {save_path}.gv
         quiet (bool): True if suppress info printing
-        wait (number): seconds to wait until killing the visualization.
+        view (bool): True if display the plot
+        wait (number): seconds to wait until killing
+            the visualization; 0 for infinity
+        title (str): title to display on cv2 window
     """
+    def _view_handler(signum, frame):
+        raise TimeoutError("end of visualization!")
+
     dot = graphviz.Digraph(comment=f"Computational Graph")
 
     # First get all the nodes and the edges.
@@ -50,4 +59,14 @@ def plot_cg(root, save_path="/tmp/cg", quiet=True):
                 seen.add(child)
     if not quiet:
         print(dot.source)
-    dot.render(f"{save_path}.gv", view=True)
+    plot_path = f"{save_path}"
+    dot.render(plot_path, format="png")
+    plot_path = f"{save_path}.png"
+
+    if view:
+        img = cv2.imread(plot_path)
+        if title is None:
+            title = root.ref.functional_name
+        cv2.imshow(title, img)
+        cv2.waitKey(wait*1000)
+        cv2.destroyAllWindows()
