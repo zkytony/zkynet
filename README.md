@@ -89,7 +89,7 @@
     # x
     ```
 
-### Visualizing computational graph
+### Composite models and visualization
 You can visualize a computational graph as
 follows:
 ```python
