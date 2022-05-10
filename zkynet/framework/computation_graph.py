@@ -102,14 +102,18 @@ class Function(TemplateObject):
     internal parameters; the values of these parameters
     are kept tracked of in the model.
     """
-    def __init__(self, inputs, params=None):
+    def __init__(self, inputs, params=None, functional_name=None):
         """
         Args:
             inputs (tuple): a tuple of ordered inputs, each a Variable.
             params (list/set-like): parameters, either a Parameter or a Constant.
                 order does not matter
+            functional_name (str): the canonical name of this Function.
+                by default, it will be the import path of this class.
         """
-        self._functional_name = utils.fullname(self)
+        self._functional_name = functional_name
+        if functional_name is None:
+            self._functional_name = utils.fullname(self)
         self._name = "{}{}".format(self._functional_name, utils.unique_id(length=3))
         assert all(isinstance(inpt, Variable) for inpt in inputs),\
             f"all objects in 'inputs' must be of type Variable"
@@ -269,19 +273,43 @@ class Operator(Function):
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
 
+    def grad(self, inpt):
+        """
+        returns gradient with respect to input.
+        """
+
 
 class Module(Function):
-    """
-    A Module is a function that is intended to
-    be user-defined, complex functions whose
-    forward call consists of operators and other
-    modules. The gradient of this function is
+    """A Module is a function that is intended to be user-defined,
+    (maybe) complicated functions whose forward call consists of
+    operators and other modules. The gradient of this function is
     automatically computed using autodiff.
 
-    There is a flat grounded computational graph
-    corresponding to a module that is created when
-    the module is called.
+    There is a flat grounded computational graph corresponding to
+    a module that is created when the module is called.
+
+    One use case of Module is also when defining an Operator,
+    you could define the gradient of that operator, potentially
+    a composite function, as a Module, so that the computational
+    graph represented by this gradient function STILL consists
+    of the Operators.
     """
+    def __init__(self, inputs, params=None, functional_name=None, call_fun=None):
+        """
+        Args:
+            call_fun (function): function to be called. This
+                supports dynamic construction of a new module
+                with a custom call function.
+        """
+        super().__init__(inputs, params=params, functional_name=functional_name)
+        self._call_fun = call_fun
+
+    def call(self, *input_nodes, **call_args):
+        if self._call_fun is None:
+            raise NotImplementedError
+        else:
+            return self._call_fun(*input_nodes, **call_args)
+
     def __call__(self, *input_vals, **call_args):
         """
         If this Module is the trigger function, then
@@ -309,6 +337,25 @@ class Module(Function):
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output
+
+    @classmethod
+    def build(functional_name, call_func, inputs, params=None):
+        """
+        Allows building a Module with a custom call function.
+
+        Usage:
+            >>> def mycall(x, y):
+            >>>    return op.add(x,y)
+            >>>
+            >>> module = Module.build("myadd", mycall, (Variable("x"), Variable("y")))
+            >>> result = module(1,3)
+            >>> print(result.value)
+            >>> # Output: 4
+        """
+        return Module(inputs,
+                      params=params,
+                      functional_name=functional_name,
+                      call_fun=call_func)
 
 
 class Input(TemplateObject):
