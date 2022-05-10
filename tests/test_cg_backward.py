@@ -49,12 +49,22 @@ def test_model1_gradient():
     m = MyTestModel1()
     result = m(3)
     result.back()
+    input_nodes = cg.get_input_nodes(result.root)
+    for input_node in input_nodes:
+        if input_node.ref.name == "x":
+            # dF/dx = 6w+27 = 33
+            assert input_node.gvalue == 33
+        elif input_node.ref.name == "w":
+            # dF/dw = x^2 = 9
+            assert input_node.gvalue == 9
+        else:
+            raise ValueError(f"Unexpected input node to module {input_node}")
 
 def run():
     test_add_operator_gradient()
     test_multiply_operator_gradient()
     test_square_operator_gradient()
-    # test_model1_gradient()
+    test_model1_gradient()
 
 if __name__ == "__main__":
     run()
