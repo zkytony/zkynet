@@ -269,7 +269,7 @@ class Operator(Function):
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes)
         if isinstance(output_val, Node):
-            raise ValueError("The output of Operator's 'call' function must not be a Node")
+            raise ValueError("The output of Operator's 'call' function must NOT be a Node")
         output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
@@ -351,6 +351,11 @@ class Module(Function):
 
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes)
+        if isinstance(output_val, Node)\
+           and not isinstance(output_val, OperatorNode):
+            raise ValueError(f"If the 'call' function of {self.name} returns a Node,"\
+                             "it must return an OperatorNode; Currently, it returns a"\
+                             f"{type(output_val)}")
 
         if isinstance(output_val, OperatorNode):
             if _GLOBAL_CALL_MANAGER.trigger_function.name == self.name:

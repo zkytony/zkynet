@@ -31,6 +31,20 @@ def test_add_operator_gradient():
     dfda_fn = add_op.gradfn(cg.Variable("a"))
     assert dfda_fn(1,2).value == 1
 
+def test_multiply_operator_gradient():
+    mult_op = op.Multiply()
+    # a + b; dfda = 1
+    dfda_fn = mult_op.gradfn(cg.Variable("a"))
+    assert dfda_fn(1,2).value == 2
+    dfdb_fn = mult_op.gradfn(cg.Variable("b"))
+    assert dfdb_fn(1,2).value == 1
+
+def test_square_operator_gradient():
+    square_op = op.Square()
+    # a + b; dfda = 1
+    dfdx_fn = square_op.gradfn(cg.Variable("x"))
+    assert dfdx_fn(2).value == 4
+
 def test_model1_gradient():
     m = MyTestModel1()
     result = m(3)
@@ -38,6 +52,8 @@ def test_model1_gradient():
 
 def run():
     test_add_operator_gradient()
+    test_multiply_operator_gradient()
+    test_square_operator_gradient()
     # test_model1_gradient()
 
 if __name__ == "__main__":
