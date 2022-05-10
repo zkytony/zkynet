@@ -56,31 +56,17 @@ def test_model1_gradient():
     m = MyTestModel1()
     result = m(3)
     result.back()
-    input_nodes = cg.get_input_nodes(result.root)
-    for input_node in input_nodes:
-        if input_node.ref.short_name == "x":
-            # dF/dx = 6w+27 = 33
-            assert input_node.gvalue == 33
-        elif input_node.ref.short_name == "w":
-            # dF/dw = x^2 = 9
-            assert input_node.gvalue == 9
-        else:
-            raise ValueError(f"Unexpected input node to module {input_node}")
+    # dF/dw = x^2 = 9
+    assert result.grad(m.param("w")) == 9
+    # dF/dx = 6w+27 = 33
+    assert result.grad(m.input("x")) == 33
 
 def test_model1_gradient_vectorized():
     m = MyTestModel1()
     result = m(np.array([3, 4, 5]))
     result.back()
-    input_nodes = cg.get_input_nodes(result.root)
-    for input_node in input_nodes:
-        if input_node.ref.short_name == "x":
-            # dF/dx = 6w+27 = 33
-            assert np.all(input_node.gvalue == np.array([33, 56, 85]))
-        elif input_node.ref.short_name == "w":
-            # dF/dw = x^2 = 9
-            assert np.all(input_node.gvalue == np.array([9, 16, 25]))
-        else:
-            raise ValueError(f"Unexpected input node to module {input_node}")
+    assert np.all(result.grad(m.param("w")) == np.array([9, 16, 25]))
+    assert np.all(result.grad(m.input("x")) == np.array([33, 56, 85]))
 
 def run():
     test_add_operator_gradient()

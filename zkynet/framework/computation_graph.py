@@ -55,6 +55,7 @@ class CallSessionManager:
             # So, we are done.
             self.call_id = None
             self.trigger_function = None
+            self._input_nodes_store = {}
 
     def get_input_node(self, node_id):
         return self._input_nodes_store.get(node_id, None)
@@ -120,8 +121,10 @@ class Function(TemplateObject):
             f"all objects in 'inputs' must be of type Variable"
 
         self._inputs = inputs  # will maintain the order
+        self._inputs_dict = {}  # maps from input short name to input
         for inp in self._inputs:
             inp.fun = self
+            self._inputs_dict[inp.short_name] = inp
 
         if params is None:
             params = set()
@@ -167,6 +170,11 @@ class Function(TemplateObject):
 
     def input_name(self, i):
         return self._inputs[i].name
+
+    def input(self, short_name):
+        if short_name not in self._inputs_dict:
+            raise ValueError(f"{short_name} is not an input.")
+        return self._inputs_dict[short_name]
 
     def call(self, *input_nodes):
         """Function to be overriden
@@ -219,7 +227,7 @@ class Function(TemplateObject):
         the given short_name, used when initializing
         this Function."""
         if short_name not in self._params:
-            raise ValueError(f"{name} is not a parameter.")
+            raise ValueError(f"{short_name} is not a parameter.")
         return self._params[short_name]
 
     def __call__(self, *input_vals):
@@ -816,7 +824,6 @@ class OperatorNode(Node):
         return gradfn(*input_vals).value
 
 
-@dataclass(frozen=True)
 class ModuleGraph:
     """
     A ModuleGraph is a computational graph that
@@ -835,18 +842,25 @@ class ModuleGraph:
     this class is very simplistic, but it does serve
     an important use.
 
-    This object is assumed to be immutable
+    This object is assumed to be immutable. So if
+    you reassign its fields (e.g. call_id) then you
+    are on your own.
     """
-    call_id: str
-
-    # the trigger function
-    module: Module
-
-    # the root of the DAG
-    # that represents the flat computational
-    # graph for module instantiated with given
-    # input values.
-    root: OperatorNode
+    def __init__(self, call_id, module, root):
+        """
+        Args:
+            call_id (str): the ID of the call that this computational
+                graph was built for.
+            module (Module): the trigger function
+            root (Node): the root of the DAG that represents the flat
+                computational graph for module instantiated with given
+                input values.
+        """
+        self.call_id = call_id
+        self.module = module
+        self.root = root
+        self._input_nodes = {inp.id: inp
+                             for inp in get_input_nodes(self.root)}
 
     @property
     def value(self):
@@ -908,6 +922,24 @@ class ModuleGraph:
                 else:
                     _still_receivers.add(receiver)
             _receivers = _still_receivers
+
+    def grad(self, inpt):
+        """
+        Returns the gradient value with respect to the
+        given input 'inpt'. Equivalent to fetching the InputNode
+        and then return its 'gvalue' field. This is convenient
+        after the user calls 'back' and gets a ModuleGraph, but
+        the user doesn't directly have access to the InputNode
+        objects inside this graph.
+
+        Args:
+            inpt (Input): the Input to the trigger function.
+        """
+        _id = InputNode.makeID(self.root.call_id, inpt)
+        if _id not in self._input_nodes:
+            raise ValueError(f"{inpt} is not an input (i.e. leaf node)"
+                             "to this computational graph")
+        return self._input_nodes[_id].gvalue
 
 
 ########## algorithms to process computational graphs ##########
