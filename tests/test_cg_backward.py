@@ -24,13 +24,21 @@ class MyTestModel1(cg.Module):
         c = op.mult(a, b)
         return c
 
+
+def test_add_operator_gradient():
+    add_op = op.Add()
+    # a + b; dfda = 1
+    dfda_fn = add_op.gradfn(cg.Variable("a"))
+    assert dfda_fn(1,2).value == 1
+
 def test_model1_gradient():
     m = MyTestModel1()
     result = m(3)
     result.back()
 
 def run():
-    test_model1_gradient()
+    test_add_operator_gradient()
+    # test_model1_gradient()
 
 if __name__ == "__main__":
     run()

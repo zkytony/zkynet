@@ -157,6 +157,13 @@ class Function(TemplateObject):
     def inputs(self):
         return self._inputs
 
+    @property
+    def inputs_nofun(self):
+        """Returns a tuple of Inputs aligned with self._inputs
+        except that the 'fun' property of each is not assigned;
+        That means those inputs could be used for other functions."""
+        return (inpt.copy_nofun() for inpt in self.inputs)
+
     def input_name(self, i):
         return self._inputs[i].name
 
@@ -282,6 +289,21 @@ class Operator(Function):
 
         Args:
             inpt (Input): the gradient taken with respect for.
+        """
+        return Module.build(f"D{self.functional_name}#{inpt.short_name}",
+                            self._gradfn,
+                            self.inputs_nofun)
+
+    def _gradfn(self, inpt, *input_vals):
+        """
+        Returns the 'call_fun' used when building a Module;
+        TO BE OVERRIDDEN.
+
+        Args:
+            inpt (Input): the gradient taken with respect for.
+            *input_vals (list-like): the values to input when
+                calling the gradient function.  Recall that
+                df(a,b)/da could be written as df/da(a,b).
         """
         raise NotImplementedError
 
@@ -437,6 +459,12 @@ class Input(TemplateObject):
             raise ValueError("Input's function is NOT set. No functional name.")
         return f"{self._fun.functional_name}.{self._short_name}"
 
+    def copy_nofun(self):
+        """Returns an Input that is a copy of self but without the 'fun'
+        property set.
+        """
+        raise NotImplementedError
+
 
 class Variable(Input):
     """Input variable; you have no control over.
@@ -445,6 +473,9 @@ class Variable(Input):
     time (not yet implemented)."""
     def __init__(self, name):
         super().__init__(name, "variable")
+
+    def copy_nofun(self):
+        return Variable(self.short_name)
 
 
 class Parameter(Input):
@@ -462,6 +493,9 @@ class Parameter(Input):
         else:
             return self.value == other
 
+    def copy_nofun(self):
+        return Parameter(self.short_name, init_value=self.value)
+
 
 class Constant(Input):
     """Its value should not change; could
@@ -473,6 +507,9 @@ class Constant(Input):
 
     def assign(self, v):
         raise ValueError("Constant value cannot change")
+
+    def copy_nofun(self):
+        return Constant(self.short_name, self.value)
 
 
 def _input_to_node(inpt, value=None):
@@ -726,21 +763,28 @@ class OperatorNode(Node):
         operator node represents variable v, and the child
         represents variable c, then this computes dv/dc
 
-        How the backwards computational graph works:
-        Just like how `pytorch's computatinoal
-        graph <https://pytorch.org/blog/computational-graphs-constructed-in-pytorch/>`_,
+        How the backwards computational graph works: Just like
+        how `pytorch's computatinoal graph
+        <https://pytorch.org/blog/computational-graphs-constructed-in-pytorch/>`_,
         works, the backward pass builds a DAG as well. However,
-        here, **we do not (need to) represent that DAG explicitly**.
-        The gradients are abstracted as messages, and the input
-        nodes to a gradient operator are never used again (Essentailly,
-        we only build 'local' computational graphs for each
-        gradient operator without connecting them together.
+        here, **we do not (need to) represent that DAG
+        explicitly**.  The gradients are abstracted as messages,
+        and the input nodes to a gradient operator are never used
+        again (Essentailly, we only build 'local' computational
+        graphs for each gradient operator without connecting them
+        together.
+
+        In our framework, there is always only one flat grounded
+        computational graph built in the forward pass. The
+        gradient values, once 'back' is called by the Module, are
+        stored within nodes on this graph.
 
         Args:
             child_index (int): Index of child
 
         Returns:
             number or array
+
         """
         gradfn = self.operator.gradfn(child.ref)
         # Need to construct inputs to this function, in order to
@@ -796,7 +840,7 @@ class ModuleGraph:
                 and self.root == other.root
         return False
 
-    def back(self):
+    def back(self, logspace=True):
         """
         Backpropagates gradients to every node in
         the computational graph. Mathematically,
@@ -806,6 +850,10 @@ class ModuleGraph:
 
         After this step, all nodes in the graph will
         have a "grad" property that stores dF/dv.
+
+        Args:
+            logspace (bool): If True, then the gradient values
+                stored in each node
         """
         # This can be implemented through message passing over
         # the graph. At any time, there is (1) a number of
@@ -830,7 +878,10 @@ class ModuleGraph:
                 assert isinstance(sender, OperatorNode)
                 for child_index, child in enumerate(sender.children):
                     dpdc = sender.grad(child)
-                    sender.send(child, sender.gvalue * dpdc)   # TODO: consider logarithm space
+                    if logspace:
+                        sender.send(child, sender.gvalue + dpdc)
+                    else:
+                        sender.send(child, sender.gvalue * dpdc)
                     _receivers.add(child)
             # conversion from receiver to sender
             _still_receivers = set()
@@ -842,15 +893,6 @@ class ModuleGraph:
                 else:
                     _still_receivers.add(receiver)
             _receivers = _still_receivers
-
-
-
-
-
-
-
-
-
 
 
 ########## algorithms to process computational graphs ##########
