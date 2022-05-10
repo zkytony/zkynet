@@ -6,24 +6,13 @@ sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 from zkynet.framework import cg, op
 import numpy as np
 
+from test_cg_forward import (MyTestModel1,
+                             CompositeModel_NoWeightSharing_DifferentInputs,
+                             CompositeModel_NoWeightSharing_SameInputs,
+                             CompositeModel_WeightSharing_DifferentInputs,
+                             CompositeModel_WeightSharing_SameInputs)
+
 description="testing backprop gradient calculations for the computational graph framework"
-
-class MyTestModel1(cg.Module):
-    """A rather simple function that represents:
-
-    f(x,w) = (x+w)*x^2
-
-    where x is an input and w is a parameter.
-    """
-    def __init__(self, w0=1):
-        super().__init__(inputs=(cg.Variable("x"),),
-                         params=(cg.Parameter("w", w0),))
-
-    def call(self, x):
-        a = op.add(x, self.param("w"))
-        b = op.square(x)
-        c = op.mult(a, b)
-        return c
 
 
 def test_add_operator_gradient():
@@ -68,6 +57,38 @@ def test_model1_gradient_vectorized():
     assert np.all(result.grad(m.param("w")) == np.array([9, 16, 25]))
     assert np.all(result.grad(m.input("x")) == np.array([33, 56, 85]))
 
+def test_composite_model_gradient():
+    cm1 = CompositeModel_NoWeightSharing_DifferentInputs()
+    result = cm1(3,4)
+    result.back()
+    assert result.grad(cm1._m1.param("w")) == 9
+    assert result.grad(cm1._m2.param("w")) == 16
+    assert result.grad(cm1.input("x1")) == 33
+
+    cm2 = CompositeModel_NoWeightSharing_SameInputs()
+    result = cm2(3)
+    result.back()
+    print("dM2/dw1", result.grad(cm2._m1.param("w")))
+    print("dM2/dw2", result.grad(cm2._m2.param("w")))
+    print("dM2/dx", result.grad(cm2.input("x1")))
+    print("---")
+
+    cm3 = CompositeModel_WeightSharing_DifferentInputs()
+    result = cm3(3,4)
+    result.back()
+    print("dM3/dw", result.grad(cm3._m1.param("w")))
+    print("dM3/dx1", result.grad(cm3.input("x1")))
+    print("dM3/dx2", result.grad(cm3.input("x2")))
+    print("---")
+
+    cm4 = CompositeModel_WeightSharing_SameInputs()
+    result = cm4(4)
+    result.back()
+    print("dM4/dw", result.grad(cm4._m1.param("w")))
+    print("dM4/dx1", result.grad(cm4.input("x1")))
+    print("---")
+
+
 def run():
     test_add_operator_gradient()
     test_multiply_operator_gradient()
@@ -75,6 +96,7 @@ def run():
     test_node_grad_function()
     test_model1_gradient()
     test_model1_gradient_vectorized()
+    test_composite_model_gradient()
 
 if __name__ == "__main__":
     run()
