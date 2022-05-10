@@ -40,6 +40,44 @@ class CompositeModel_NoWeightSharing_DifferentInputs(cg.Module):
         b = self._m2(x2)
         return op.add(a, b)
 
+class CompositeModel_WeightSharing_DifferentInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),
+                                 cg.Variable("x2")))
+        # I expect the weights in the two may differ
+        self._m1 = MyTestModel1()
+
+    def call(self, x1, x2):
+        a = self._m1(x1)
+        b = self._m1(x2)
+        return op.add(a, b)
+
+class CompositeModel_NoWeightSharing_SameInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),))
+        # I expect the weights in the two may differ
+        self._m1 = MyTestModel1()
+        self._m2 = MyTestModel1()
+
+    def call(self, x1):
+        a = self._m1(x1)
+        b = self._m2(x1)
+        return op.add(a, b)
+
+class CompositeModel_WeightSharing_SameInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),))
+        # I expect the weights in the two may differ
+        self._m1 = MyTestModel1()
+
+    def call(self, x1):
+        a = self._m1(x1)
+        b = self._m1(x1)
+        return op.add(a, b)
+
 
 def test_model1_forward():
     m = MyTestModel1()
@@ -68,11 +106,29 @@ def test_visualize_CompositeModel_NoWeightSharing_DifferentInputs():
     result = m(3, 4)
     plot_cg(result.root, quiet=True)
 
+def test_visualize_CompositeModel_WeightSharing_DifferentInputs():
+    m = CompositeModel_WeightSharing_DifferentInputs()
+    result = m(3, 4)
+    plot_cg(result.root, quiet=True)
+
+def test_visualize_CompositeModel_NoWeightSharing_SameInputs():
+    m = CompositeModel_NoWeightSharing_SameInputs()
+    result = m(3, 4)
+    plot_cg(result.root, quiet=True)
+
+def test_visualize_CompositeModel_WeightSharing_SameInputs():
+    m = CompositeModel_WeightSharing_SameInputs()
+    result = m(3, 4)
+    plot_cg(result.root, quiet=True)
+
 
 def run():
     test_model1_forward()
     # test_visualize_cg()
-    test_visualize_CompositeModel_NoWeightSharing_DifferentInputs()
+    # test_visualize_CompositeModel_NoWeightSharing_DifferentInputs()
+    # test_visualize_CompositeModel_WeightSharing_DifferentInputs()
+    # test_visualize_CompositeModel_NoWeightSharing_SameInputs()
+    test_visualize_CompositeModel_WeightSharing_SameInputs()
 
 if __name__ == "__main__":
     run()
