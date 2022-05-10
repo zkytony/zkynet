@@ -1,3 +1,4 @@
+
 import os, sys
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ABS_PATH, '../'))
@@ -66,12 +67,28 @@ def test_model1_gradient():
         else:
             raise ValueError(f"Unexpected input node to module {input_node}")
 
+def test_model1_gradient_vectorized():
+    m = MyTestModel1()
+    result = m(np.array([3, 4, 5]))
+    result.back()
+    input_nodes = cg.get_input_nodes(result.root)
+    for input_node in input_nodes:
+        if input_node.ref.short_name == "x":
+            # dF/dx = 6w+27 = 33
+            assert np.all(input_node.gvalue == np.array([33, 56, 85]))
+        elif input_node.ref.short_name == "w":
+            # dF/dw = x^2 = 9
+            assert np.all(input_node.gvalue == np.array([9, 16, 25]))
+        else:
+            raise ValueError(f"Unexpected input node to module {input_node}")
+
 def run():
     test_add_operator_gradient()
     test_multiply_operator_gradient()
     test_square_operator_gradient()
     test_node_grad_function()
     test_model1_gradient()
+    test_model1_gradient_vectorized()
 
 if __name__ == "__main__":
     run()
