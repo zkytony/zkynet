@@ -46,7 +46,7 @@ class CompositeModel_WeightSharing_DifferentInputs(cg.Module):
         super().__init__(inputs=(cg.Variable("x1"),
                                  cg.Variable("x2")))
         # I expect the weights in the two may differ
-        self._m1 = MyTestModel1()
+        self._m1 = MyTestModel1(w0=2)
 
     def call(self, x1, x2):
         a = self._m1(x1)
@@ -108,7 +108,7 @@ def test_visualize_CompositeModel_NoWeightSharing_DifferentInputs():
 
 def test_visualize_CompositeModel_WeightSharing_DifferentInputs():
     m = CompositeModel_WeightSharing_DifferentInputs()
-    result = m(3, 4)
+    result = m(3, 3)
     plot_cg(result.root, quiet=True)
 
 def test_visualize_CompositeModel_NoWeightSharing_SameInputs():

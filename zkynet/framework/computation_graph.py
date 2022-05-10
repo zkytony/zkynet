@@ -18,10 +18,17 @@ class CallSessionManager:
     function is finished (the trigger function is the first
     function that is called, which is likely a user-defined
     model).
+
+    Additionally, it stores InputNodes that have been
+    created (identified by its ID), so that subsequent
+    calls to the 'to_node' method of Input do not create
+    new ones (which may have wrong parent/children relationships)
+    but reuse the ones stored here.
     """
     def __init__(self):
         self.call_id = None
         self.trigger_function = None
+        self._input_nodes_store = {}  # maps from ID to InputNode
 
     def call_begin(self, fun):
         if self.call_id is None:
@@ -45,6 +52,16 @@ class CallSessionManager:
             # So, we are done.
             self.call_id = None
             self.trigger_function = None
+
+    def get_input_node(self, node_id):
+        return self._input_nodes_store.get(node_id, None)
+
+    def store_input_node(self, node):
+        if not isinstance(node, InputNode):
+            raise TypeError("CallSessionManager only stores InputNode")
+        if node.id in self._input_nodes_store:
+            raise TypeError(f"Node {node.id} is already created. Unexpected.")
+        self._input_nodes_store[node.id] = node
 _GLOBAL_CALL_MANAGER = CallSessionManager()
 
 
@@ -171,13 +188,15 @@ class Function(TemplateObject):
                 if isinstance(input_val, Node):
                     node = input_val
                 elif isinstance(input_val, Input):
-                    node = input_val.to_node()
+                    node = _input_to_node(input_val)
                 else:
-                    # input_val is likely a number or array
+                    # input_val is likely a number or array;
+                    # it has a corresponding variable
                     input_name = self._ordered_input_names[i]
-                    node = InputNode(_GLOBAL_CALL_MANAGER.call_id,
-                                     self.inputs[input_name],
-                                     input_val)
+                    variable_input = self.inputs[input_name]
+                    assert isinstance(variable_input, Variable)
+                    node = _input_to_node(variable_input,
+                                          value=input_val)
                 input_nodes.append(node)
         except IndexError:
             raise ValueError("When calling a function, all its inputs must be instantiated.")
@@ -243,7 +262,6 @@ class Operator(Function):
         output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
-            print(input_nodes[i].parents)
             input_nodes[i].add_parent(output_node, self.input_name(i))
             if isinstance(input_nodes[i].ref, Parameter):
                 print("HELLO! I am", input_nodes[i].id, ". my parents are:", input_nodes[i].parents)
@@ -365,14 +383,6 @@ class Input(TemplateObject):
             raise ValueError("Input's function is NOT set. No functional name.")
         return f"{self._fun.functional_name}.{self._short_name}"
 
-    def to_node(self):
-        """convert to InputNode; assuming this is called during a
-        function call (so there would be a call id assigned to this
-        InputNode)"""
-        return InputNode(_GLOBAL_CALL_MANAGER.call_id,
-                         self,
-                         self.value)
-
 
 class Variable(Input):
     """Input variable; you have no control over.
@@ -409,6 +419,30 @@ class Constant(Input):
 
     def assign(self, v):
         raise ValueError("Constant value cannot change")
+
+
+def _input_to_node(inpt, value=None):
+    """convert 'inpt' (Input) to InputNode; assuming this is called during a
+    function call (so there would be a call id assigned to this
+    InputNode)
+
+    Note that 'value' is used only if inpt is a Variable.
+    Otherwise, the value comes from what is stored in the
+    inpt object.
+    """
+    call_id = _GLOBAL_CALL_MANAGER.call_id
+    input_node_id = InputNode.makeID(call_id, inpt)
+    input_node = _GLOBAL_CALL_MANAGER.get_input_node(input_node_id)
+    if input_node is not None:
+        return input_node
+    else:
+        if isinstance(inpt, Variable):
+            assert value is not None, "Variable input must ground with a value."
+        else:
+            value = inpt.value
+        input_node = InputNode(call_id, inpt, value)
+        _GLOBAL_CALL_MANAGER.store_input_node(input_node)
+        return input_node
 
 
 ########### The computation graph components ##########
@@ -496,7 +530,7 @@ class Node(IDObject):
                 indicates the name of the input to the parent function that
                 this node corresponds to.
         """
-        _id = f"{self.__class__.__name__}_{call_id}_{ref.name}"
+        _id = self.__class__.makeID(call_id, ref)
         super().__init__(_id)
 
         self.call_id = call_id
@@ -509,6 +543,9 @@ class Node(IDObject):
         self._parents = parents
         self._value = value
 
+    @classmethod
+    def makeID(cls, call_id, ref):
+        return f"{cls.__name__}_{call_id}_{ref.name}"
 
     def __hash__(self):
         return hash(self._id)
@@ -544,7 +581,6 @@ class Node(IDObject):
         return self._children
 
     def add_parent(self, parent, parent_input_name):
-        print(self.parents)
         self._parents[parent] = parent_input_name
 
     def __str__(self):
