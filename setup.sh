@@ -29,6 +29,11 @@ if [ ! -d "venv/zkynet" ]; then
     pip install jupyter
     pip install pomdp-py
     pip install graphviz
+
+    pip install sphinx
+    pip install sphinxcontrib-bibtex
+    pip install sphinx_rtd_theme
+    pip install recommonmark
 fi
 
 source_venv=true

@@ -35,8 +35,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"></div>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="source/README.html">zkynet: exploring deep learning basics.</a></li>
+</ul>
+
         </div>
       </div>
     </nav>
@@ -105,6 +108,8 @@
       <ul>
         <li><a href="computation_graph.html#zkynet.framework.computation_graph.InputNode.__init__">(zkynet.framework.computation_graph.InputNode method)</a>
 </li>
+        <li><a href="computation_graph.html#zkynet.framework.computation_graph.Module.__init__">(zkynet.framework.computation_graph.Module method)</a>
+</li>
         <li><a href="computation_graph.html#zkynet.framework.computation_graph.Node.__init__">(zkynet.framework.computation_graph.Node method)</a>
 </li>
         <li><a href="computation_graph.html#zkynet.framework.computation_graph.OperatorNode.__init__">(zkynet.framework.computation_graph.OperatorNode method)</a>
@@ -112,11 +117,17 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="computation_graph.html#zkynet.framework.computation_graph.Node.__repr__">__repr__() (zkynet.framework.computation_graph.Node method)</a>
-</li>
-      <li><a href="computation_graph.html#zkynet.framework.computation_graph.Node.__str__">__str__() (zkynet.framework.computation_graph.Node method)</a>
+      <li><a href="computation_graph.html#zkynet.framework.computation_graph.Function.__repr__">__repr__() (zkynet.framework.computation_graph.Function method)</a>
 
       <ul>
+        <li><a href="computation_graph.html#zkynet.framework.computation_graph.Node.__repr__">(zkynet.framework.computation_graph.Node method)</a>
+</li>
+      </ul></li>
+      <li><a href="computation_graph.html#zkynet.framework.computation_graph.Function.__str__">__str__() (zkynet.framework.computation_graph.Function method)</a>
+
+      <ul>
+        <li><a href="computation_graph.html#zkynet.framework.computation_graph.Node.__str__">(zkynet.framework.computation_graph.Node method)</a>
+</li>
         <li><a href="computation_graph.html#zkynet.framework.computation_graph.OperatorNode.__str__">(zkynet.framework.computation_graph.OperatorNode method)</a>
 </li>
       </ul></li>
@@ -142,8 +153,16 @@
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/zkynet.models.html#zkynet.models.fcn.FCNLayer.build">build() (zkynet.models.fcn.FCNLayer class method)</a>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.ModuleGraph.back">back() (zkynet.framework.computation_graph.ModuleGraph method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.ModuleGraph.back">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Module.build">build() (zkynet.framework.computation_graph.Module class method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Module.build">[1]</a>
+
+      <ul>
+        <li><a href="api/zkynet.models.html#zkynet.models.fcn.FCNLayer.build">(zkynet.models.fcn.FCNLayer class method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -153,6 +172,8 @@
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Function.call">call() (zkynet.framework.computation_graph.Function method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Function.call">[1]</a>
 
       <ul>
+        <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Module.call">(zkynet.framework.computation_graph.Module method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Module.call">[1]</a>
+</li>
         <li><a href="api/zkynet.framework.html#zkynet.framework.operations.Add.call">(zkynet.framework.operations.Add method)</a>
 </li>
         <li><a href="api/zkynet.framework.html#zkynet.framework.operations.Identity.call">(zkynet.framework.operations.Identity method)</a>
@@ -162,18 +183,30 @@
         <li><a href="api/zkynet.framework.html#zkynet.framework.operations.Square.call">(zkynet.framework.operations.Square method)</a>
 </li>
       </ul></li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager.call_begin">call_begin() (zkynet.framework.computation_graph.CallSessionManager method)</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager.call_end">call_end() (zkynet.framework.computation_graph.CallSessionManager method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.FunctionCallManager.call_begin">call_begin() (zkynet.framework.computation_graph.FunctionCallManager method)</a>
-</li>
-      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.FunctionCallManager.call_end">call_end() (zkynet.framework.computation_graph.FunctionCallManager method)</a>
-</li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.ModuleGraph.call_id">call_id (zkynet.framework.computation_graph.ModuleGraph attribute)</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager">CallSessionManager (class in zkynet.framework.computation_graph)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.children">children (zkynet.framework.computation_graph.Node property)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Constant">Constant (class in zkynet.framework.computation_graph)</a>
 </li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Constant.copy_nofun">copy_nofun() (zkynet.framework.computation_graph.Constant method)</a>
+
+      <ul>
+        <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Input.copy_nofun">(zkynet.framework.computation_graph.Input method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Input.copy_nofun">[1]</a>
+</li>
+        <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Parameter.copy_nofun">(zkynet.framework.computation_graph.Parameter method)</a>
+</li>
+        <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Variable.copy_nofun">(zkynet.framework.computation_graph.Variable method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -188,14 +221,14 @@
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Input.fun">fun (zkynet.framework.computation_graph.Input property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Input.fun">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Function">Function (class in zkynet.framework.computation_graph)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Function">[1]</a>
 
       <ul>
         <li><a href="api/zkynet.models.html#zkynet.models.function.Function">(class in zkynet.models.function)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Function.functional_name">functional_name (zkynet.framework.computation_graph.Function property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Function.functional_name">[1]</a>
 
       <ul>
@@ -204,8 +237,6 @@
         <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.TemplateObject.functional_name">(zkynet.framework.computation_graph.TemplateObject property)</a>
 </li>
       </ul></li>
-      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.FunctionCallManager">FunctionCallManager (class in zkynet.framework.computation_graph)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -213,6 +244,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.get_all_nodes">get_all_nodes() (in module zkynet.framework.computation_graph)</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager.get_input_node">get_input_node() (zkynet.framework.computation_graph.CallSessionManager method)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.get_input_nodes">get_input_nodes() (in module zkynet.framework.computation_graph)</a>
 </li>
@@ -224,6 +257,10 @@
         <li><a href="api/zkynet.framework.html#zkynet.framework.operations.Identity.grad">(zkynet.framework.operations.Identity method)</a>
 </li>
       </ul></li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Operator.gradfn">gradfn() (zkynet.framework.computation_graph.Operator method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Operator.gradfn">[1]</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.gvalue">gvalue (zkynet.framework.computation_graph.Node property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Node.gvalue">[1]</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -242,10 +279,10 @@
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.IDObject">IDObject (class in zkynet.framework.computation_graph)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Input">Input (class in zkynet.framework.computation_graph)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Input">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.InputNode.input">input (zkynet.framework.computation_graph.InputNode property)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Function.input_name">input_name() (zkynet.framework.computation_graph.Function method)</a>
@@ -253,6 +290,8 @@
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.InputNode">InputNode (class in zkynet.framework.computation_graph)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.InputNode">[1]</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Function.inputs">inputs (zkynet.framework.computation_graph.Function property)</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Function.inputs_nofun">inputs_nofun (zkynet.framework.computation_graph.Function property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Function.inputs_nofun">[1]</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.isleaf">isleaf() (zkynet.framework.computation_graph.Node method)</a>
 </li>
@@ -274,6 +313,8 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.makeID">makeID() (zkynet.framework.computation_graph.Node class method)</a>
+</li>
       <li>
     module
 
@@ -375,7 +416,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.parent_input_name">parent_input_name (zkynet.framework.computation_graph.Node property)</a>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.parent_input_index">parent_input_index() (zkynet.framework.computation_graph.Node method)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.parents">parents (zkynet.framework.computation_graph.Node property)</a>
 </li>
@@ -387,10 +428,14 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.ref">ref (zkynet.framework.computation_graph.Node property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Node.ref">[1]</a>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.receive">receive() (zkynet.framework.computation_graph.Node method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Node.receive">[1]</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.received_messages_from_all_parents">received_messages_from_all_parents() (zkynet.framework.computation_graph.Node method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.ref">ref (zkynet.framework.computation_graph.Node property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Node.ref">[1]</a>
+</li>
       <li><a href="api/zkynet.models.html#zkynet.models.fcn.ReLU">ReLU (class in zkynet.models.fcn)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.ModuleGraph.root">root (zkynet.framework.computation_graph.ModuleGraph attribute)</a>
@@ -401,6 +446,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.OperatorNode.send">send() (zkynet.framework.computation_graph.OperatorNode method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.OperatorNode.send">[1]</a>
+</li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Input.short_name">short_name (zkynet.framework.computation_graph.Input property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Input.short_name">[1]</a>
 </li>
   </ul></td>
@@ -408,6 +455,8 @@
       <li><a href="api/zkynet.framework.html#zkynet.framework.operations.Square">Square (class in zkynet.framework.operations)</a>
 </li>
       <li><a href="api/zkynet.framework.html#zkynet.framework.operations.square">square() (in module zkynet.framework.operations)</a>
+</li>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager.store_input_node">store_input_node() (zkynet.framework.computation_graph.CallSessionManager method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -418,16 +467,16 @@
       <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.TemplateObject">TemplateObject (class in zkynet.framework.computation_graph)</a>
 </li>
   </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Input.to_node">to_node() (zkynet.framework.computation_graph.Input method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Input.to_node">[1]</a>
-</li>
-  </ul></td>
 </tr></table>
 
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/zkynet.html#zkynet.utils.unique_id">unique_id() (in module zkynet.utils)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.update_gvalue">update_gvalue() (zkynet.framework.computation_graph.Node method)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Node.update_gvalue">[1]</a>
 </li>
   </ul></td>
 </tr></table>
@@ -440,7 +489,7 @@
       <ul>
         <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.ModuleGraph.value">(zkynet.framework.computation_graph.ModuleGraph property)</a>
 </li>
-        <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.value">(zkynet.framework.computation_graph.Node property)</a>
+        <li><a href="api/zkynet.framework.html#zkynet.framework.computation_graph.Node.value">(zkynet.framework.computation_graph.Node property)</a>, <a href="computation_graph.html#zkynet.framework.computation_graph.Node.value">[1]</a>
 </li>
       </ul></li>
   </ul></td>

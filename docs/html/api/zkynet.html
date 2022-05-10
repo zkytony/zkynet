@@ -36,18 +36,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">zkynet package</a><ul>
-<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-zkynet.utils">zkynet.utils module</a></li>
-<li><a class="reference internal" href="#module-zkynet.visual">zkynet.visual module</a></li>
-<li><a class="reference internal" href="#module-zkynet">Module contents</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../source/README.html">zkynet: exploring deep learning basics.</a></li>
 </ul>
-</li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -128,7 +121,7 @@
 </div></blockquote>
 <dl class="py function">
 <dt class="sig sig-object py" id="zkynet.visual.plot_cg">
-<span class="sig-prename descclassname"><span class="pre">zkynet.visual.</span></span><span class="sig-name descname"><span class="pre">plot_cg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/tmp/cg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/visual.html#plot_cg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.visual.plot_cg" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">zkynet.visual.</span></span><span class="sig-name descname"><span class="pre">plot_cg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/tmp/cg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/visual.html#plot_cg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.visual.plot_cg" title="Permalink to this definition"></a></dt>
 <dd><p>Visualize the computational graph headed by ‘root’</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -136,7 +129,10 @@
 <li><p><strong>root</strong> (<em>cg.Node</em>) – </p></li>
 <li><p><strong>save_path</strong> (<em>str</em>) – file name would be {save_path}.gv</p></li>
 <li><p><strong>quiet</strong> (<em>bool</em>) – True if suppress info printing</p></li>
-<li><p><strong>wait</strong> (<em>number</em>) – seconds to wait until killing the visualization.</p></li>
+<li><p><strong>view</strong> (<em>bool</em>) – True if display the plot</p></li>
+<li><p><strong>wait</strong> (<em>number</em>) – seconds to wait until killing
+the visualization; 0 for infinity</p></li>
+<li><p><strong>title</strong> (<em>str</em>) – title to display on cv2 window</p></li>
 </ul>
 </dd>
 </dl>

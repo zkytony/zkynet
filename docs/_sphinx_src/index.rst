@@ -7,19 +7,11 @@ zkynet: exploring deep learning basics
 ======================================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Contents:
 
+   source/README.md
 
-Key components
---------------
-
-* :doc:`The computational graph and automatic differentiation framework <computation_graph>`
-
-
-.. raw:: html
-
-   <hr>
 
 Notable modules
 ---------------

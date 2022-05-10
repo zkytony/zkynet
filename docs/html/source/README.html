@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zkynet: exploring deep learning basics. &mdash; zkynet  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="zkynet: exploring deep learning basics" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> zkynet
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">zkynet: exploring deep learning basics.</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-jax">Install JAX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-download-kaggle-datasets">(Optional): Download Kaggle Datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#progress-tracker">Progress tracker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-jax">APPENDIX: JAX</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#autograd">autograd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thoughts">Thoughts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">zkynet</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>zkynet: exploring deep learning basics.</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="zkynet-exploring-deep-learning-basics">
+<h1>zkynet: exploring deep learning basics.<a class="headerlink" href="#zkynet-exploring-deep-learning-basics" title="Permalink to this headline"></a></h1>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline"></a></h2>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
+<p>Run <code class="docutils literal notranslate"><span class="pre">setup.sh</span></code> to create and activate a designated virtualenv,
+if you so desire. You should then install:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">torch</span> <span class="n">torchvision</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">matplotlib</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">jupyter</span>
+</pre></div>
+</div>
+<section id="install-jax">
+<h3>Install JAX<a class="headerlink" href="#install-jax" title="Permalink to this headline"></a></h3>
+<p>For some parts of the codebase, you may need to use JAX.</p>
+<p>Install <a class="reference external" href="https://github.com/google/jax">JAX</a>.
+Follow the steps for <a class="reference external" href="https://github.com/google/jax#pip-installation-gpu-cuda">GPU (CUDA)</a>.
+Essentially:</p>
+<ol>
+<li><p>Make sure your CUDA and cuDNN versions are correct</p></li>
+<li><p>Then run a pip install command to install <code class="docutils literal notranslate"><span class="pre">jax[cuda]</span></code>. As of 05/02/2022:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="s2">&quot;jax[cuda]&quot;</span> <span class="o">-</span><span class="n">f</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">storage</span><span class="o">.</span><span class="n">googleapis</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jax</span><span class="o">-</span><span class="n">releases</span><span class="o">/</span><span class="n">jax_releases</span><span class="o">.</span><span class="n">html</span>  <span class="c1"># Note: wheels only available on linux.</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="optional-download-kaggle-datasets">
+<h3>(Optional): Download Kaggle Datasets<a class="headerlink" href="#optional-download-kaggle-datasets" title="Permalink to this headline"></a></h3>
+<p>Run <code class="docutils literal notranslate"><span class="pre">download_datasets.sh</span></code></p>
+<p>This will download several kaggle datasets.</p>
+</section>
+</section>
+<section id="progress-tracker">
+<h2>Progress tracker<a class="headerlink" href="#progress-tracker" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>[X] Implement basic feed-forward network</p></li>
+<li><p>[ ] Be able to train the network using gradient descent</p>
+<ul>
+<li><p>[-] Implement a framework for automatic differentiation</p>
+<ul>
+<li><p>[X] computational graph forward construction (05/06/2022)</p></li>
+<li><p>[X] backward gradient accumulation (05/09/2022)</p></li>
+<li><p>[ ] log space</p></li>
+<li><p>[ ] vectorization tests</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>[ ] Implement convolutional neural network</p></li>
+<li><p>[ ] Implement recurrent neural network</p></li>
+<li><p>[ ] Implement auto-encoder</p></li>
+<li><p>[ ] Implement transformer</p></li>
+</ul>
+</section>
+<section id="appendix-jax">
+<h2>APPENDIX: JAX<a class="headerlink" href="#appendix-jax" title="Permalink to this headline"></a></h2>
+<p>The JAX library provides a high-level interface
+<code class="docutils literal notranslate"><span class="pre">jax.numpy</span></code> and a low-level interface <code class="docutils literal notranslate"><span class="pre">jax.lax</span></code>. The
+low-level interface is stricter, but often more
+powerful. Functions in <code class="docutils literal notranslate"><span class="pre">jax.numpy</span></code> eventually get
+passed down to calls to <code class="docutils literal notranslate"><span class="pre">jax.lax</span></code> functions.</p>
+<p>In JAX, arrays are ALWAYS immutable.</p>
+<p>The main feature of JAX is “Just-In-Time” compilation,
+which means code gets compiled the first time they
+are run. Doc says:</p>
+<blockquote>
+<div><p>Not all JAX code can be JIT compiled, as it requires array shapes to be static &amp; known at compile time</p>
+</div></blockquote>
+<p>The way JAX can do JIT is because it expresses
+its operations in terms of XLA (the Accelerated Linear
+Algebra compiler).</p>
+<p>In fact, people use JAX as a deep learning framework
+too - alongside PyTorch. See [<a class="reference external" href="https://www.reddit.com/r/MachineLearning/comments/shsfkm/d_current_state_of_jax_vs_pytorch/hv4h3k7/">this reddit post</a>.</p>
+<section id="autograd">
+<h3>autograd<a class="headerlink" href="#autograd" title="Permalink to this headline"></a></h3>
+<p><a class="reference external" href="https://github.com/HIPS/autograd">autograd</a> is a library that differentiates native Python and Numpy code.
+Pytorch either uses this library or implements something like it <a class="reference external" href="https://pytorch.org/docs/stable/autograd.html">torch.autograd</a>
+that works on Pytorch’s tensors (instead of native python / numpy data structures).</p>
+<p>Autograd’s <code class="docutils literal notranslate"><span class="pre">grad</span></code> function takes in a function, and gives you a function that
+computes its derivative.</p>
+</section>
+<section id="thoughts">
+<h3>Thoughts<a class="headerlink" href="#thoughts" title="Permalink to this headline"></a></h3>
+<p>一开始我觉得Autograd很神奇，跟tensorflow不一样。但是，实际上他们是一样的。
+背后都有一个operation framework，只不过tensorflow是用自定义的framework，
+而autograd利用的numpy和python自带的，比较轻便罢了。本质上的原理没有区别。</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="zkynet: exploring deep learning basics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Kaiyu Zheng.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -35,8 +35,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"></div>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet: exploring deep learning basics.</a></li>
+</ul>
+
         </div>
       </div>
     </nav>
@@ -66,7 +69,7 @@
 <span class="sd">Hard-coded operations</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">.computation_graph</span> <span class="kn">import</span> <span class="n">Operator</span><span class="p">,</span> <span class="n">Variable</span>
+<span class="kn">from</span> <span class="nn">.computation_graph</span> <span class="kn">import</span> <span class="n">Operator</span><span class="p">,</span> <span class="n">Variable</span><span class="p">,</span> <span class="n">Module</span>
 
 <div class="viewcode-block" id="Identity"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Identity">[docs]</a><span class="k">class</span> <span class="nc">Identity</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -76,14 +79,28 @@
         <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">value</span></div>
 
 <div class="viewcode-block" id="Identity.grad"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Identity.grad">[docs]</a>    <span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
-        <span class="k">pass</span></div></div>
+        <span class="k">return</span> <span class="mi">1</span></div></div>
+
 
 <div class="viewcode-block" id="Add"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Add">[docs]</a><span class="k">class</span> <span class="nc">Add</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
 
 <div class="viewcode-block" id="Add.call"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Add.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span></div></div>
+        <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span></div>
+
+    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_a_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">def</span> <span class="nf">_b_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_a_grad</span>
+        <span class="k">elif</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_b_grad</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown input for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Multiply"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Multiply">[docs]</a><span class="k">class</span> <span class="nc">Multiply</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
@@ -91,7 +108,20 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
 
 <div class="viewcode-block" id="Multiply.call"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Multiply.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span></div></div>
+        <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span></div>
+
+    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_a_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">def</span> <span class="nf">_b_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_a_grad</span>
+        <span class="k">elif</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_b_grad</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown input for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Square"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Square">[docs]</a><span class="k">class</span> <span class="nc">Square</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
@@ -99,7 +129,16 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">),))</span>
 
 <div class="viewcode-block" id="Square.call"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.Square.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_x_grad</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_x_grad</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown input for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="add"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.operations.add">[docs]</a><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
