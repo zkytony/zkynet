@@ -37,7 +37,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet: exploring deep learning basics.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet</a></li>
 </ul>
 
         </div>
@@ -121,7 +121,8 @@
             <span class="c1"># OK. The trigger function has terminated.</span>
             <span class="c1"># So, we are done.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">trigger_function</span> <span class="o">=</span> <span class="kc">None</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trigger_function</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_input_nodes_store</span> <span class="o">=</span> <span class="p">{}</span></div>
 
 <div class="viewcode-block" id="CallSessionManager.get_input_node"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager.get_input_node">[docs]</a>    <span class="k">def</span> <span class="nf">get_input_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_nodes_store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
@@ -187,8 +188,10 @@
             <span class="sa">f</span><span class="s2">&quot;all objects in &#39;inputs&#39; must be of type Variable&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">=</span> <span class="n">inputs</span>  <span class="c1"># will maintain the order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># maps from input short name to input</span>
         <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">:</span>
             <span class="n">inp</span><span class="o">.</span><span class="n">fun</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">short_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span>
 
         <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -234,6 +237,11 @@
 
 <div class="viewcode-block" id="Function.input_name"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.input_name">[docs]</a>    <span class="k">def</span> <span class="nf">input_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span></div>
+
+<div class="viewcode-block" id="Function.input"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.input">[docs]</a>    <span class="k">def</span> <span class="nf">input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">short_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> is not an input.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">[</span><span class="n">short_name</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="Function.call"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Function.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_nodes</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Function to be overriden</span>
@@ -286,7 +294,7 @@
 <span class="sd">        the given short_name, used when initializing</span>
 <span class="sd">        this Function.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">short_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not a parameter.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> is not a parameter.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="n">short_name</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="Function.__call__"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Function.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">):</span>
@@ -883,8 +891,7 @@
         <span class="k">return</span> <span class="n">gradfn</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span><span class="o">.</span><span class="n">value</span></div></div>
 
 
-<div class="viewcode-block" id="ModuleGraph"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.ModuleGraph">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ModuleGraph</span><span class="p">:</span>
+<div class="viewcode-block" id="ModuleGraph"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.ModuleGraph">[docs]</a><span class="k">class</span> <span class="nc">ModuleGraph</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A ModuleGraph is a computational graph that</span>
 <span class="sd">    is grounded when a Module is called. It stores</span>
@@ -902,18 +909,25 @@
 <span class="sd">    this class is very simplistic, but it does serve</span>
 <span class="sd">    an important use.</span>
 
-<span class="sd">    This object is assumed to be immutable</span>
+<span class="sd">    This object is assumed to be immutable. So if</span>
+<span class="sd">    you reassign its fields (e.g. call_id) then you</span>
+<span class="sd">    are on your own.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="c1"># the trigger function</span>
-    <span class="n">module</span><span class="p">:</span> <span class="n">Module</span>
-
-    <span class="c1"># the root of the DAG</span>
-    <span class="c1"># that represents the flat computational</span>
-    <span class="c1"># graph for module instantiated with given</span>
-    <span class="c1"># input values.</span>
-    <span class="n">root</span><span class="p">:</span> <span class="n">OperatorNode</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            call_id (str): the ID of the call that this computational</span>
+<span class="sd">                graph was built for.</span>
+<span class="sd">            module (Module): the trigger function</span>
+<span class="sd">            root (Node): the root of the DAG that represents the flat</span>
+<span class="sd">                computational graph for module instantiated with given</span>
+<span class="sd">                input values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="n">call_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span> <span class="o">=</span> <span class="n">module</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">inp</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">inp</span>
+                             <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">get_input_nodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)}</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -974,7 +988,25 @@
                         <span class="n">_senders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">receiver</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">_still_receivers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">receiver</span><span class="p">)</span>
-            <span class="n">_receivers</span> <span class="o">=</span> <span class="n">_still_receivers</span></div></div>
+            <span class="n">_receivers</span> <span class="o">=</span> <span class="n">_still_receivers</span></div>
+
+<div class="viewcode-block" id="ModuleGraph.grad"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.ModuleGraph.grad">[docs]</a>    <span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the gradient value with respect to the</span>
+<span class="sd">        given input &#39;inpt&#39;. Equivalent to fetching the InputNode</span>
+<span class="sd">        and then return its &#39;gvalue&#39; field. This is convenient</span>
+<span class="sd">        after the user calls &#39;back&#39; and gets a ModuleGraph, but</span>
+<span class="sd">        the user doesn&#39;t directly have access to the InputNode</span>
+<span class="sd">        objects inside this graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            inpt (Input): the Input to the trigger function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_id</span> <span class="o">=</span> <span class="n">InputNode</span><span class="o">.</span><span class="n">makeID</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span> <span class="n">inpt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_nodes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inpt</span><span class="si">}</span><span class="s2"> is not an input (i.e. leaf node)&quot;</span>
+                             <span class="s2">&quot;to this computational graph&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_nodes</span><span class="p">[</span><span class="n">_id</span><span class="p">]</span><span class="o">.</span><span class="n">gvalue</span></div></div>
 
 
 <span class="c1">########## algorithms to process computational graphs ##########</span>

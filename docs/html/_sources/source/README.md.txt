@@ -1,18 +1,222 @@
-# zkynet: exploring deep learning basics.
+# zkynet
+
+Exploring deep learning basics through implementations.
 
 ## Examples
+
+### Proof-of-concept model
+
+1. Define a simple model for the function `f(x) = (x+w)*x^2` where `x` is an input and `w` is a parameter
+
+    ```python
+    from zkynet.framework import cg, op
+
+    class SimpleModel(cg.Module):
+        """A rather simple function that represents:
+
+        f(x,w) = (x+w)*x^2
+
+        where x is an input and w is a parameter.
+        """
+        def __init__(self, w0=1):
+            super().__init__(inputs=(cg.Variable("x"),),
+                             params=(cg.Parameter("w", w0),))
+
+        def call(self, x):
+            a = op.add(x, self.param("w"))
+            b = op.square(x)
+            c = op.mult(a, b)
+            return c
+    ```
+    Notice how the `call()` function defines the forward pass of
+    the model, where operations come from `zkynet.framework.op`
+    (short for `zkynet.framework.operations`). These are operations
+    specifically designed to work with our computational graph framework.
+
+    **Relation to PyTorch:** (1) the `call()` function
+    is like `forward()` in a PyTorch nn.Module. (2) PyTorch
+    uses Tensors as its representation of values, which
+    have many built-in operations. We don't rely on Tensor
+    (we are building from basic scratch) so we use our own
+    operators.
+
+
+2. Forward pass:
+   ```python
+   m = SimpleModel()
+   result = m(3)
+   result.value
+   # 36
+   ```
+   Here, `m(3)` calls the model and performs a forward pass,
+   with the input `x` set to value `3`. The output `result`
+   is of type **ModuleGraph** which represents a computational
+   graph that is grounded to the given input.
+
+   Note that each call produces an independent computational
+   graph. Namely:
+   ```python
+   result1 = m(3)
+   result2 = m(3)
+   assert result1 != result2
+   assert result1.root != result2.root
+   ```
+   Each call of the model generates a _call_id_, which is used
+   to distinguish between the computational graphs generated
+   for each call.
+
+   If you think of defining the model class as writing a
+   "template" of how inputs are associated to produce an
+   output, then a computational graph is an instantiation
+   of that template with all the placeholder inputs are filled
+   with concrete, given values.
+
+   Note that you could pass in a vector too:
+   ```python
+   import numpy as np
+
+   result = m(np.array([3, 4, 5]))
+   result.value
+   # array([ 36,  80, 150])
+   ```
+
+3. Backprop & gradients:
+
+    ```python
+    result = m(3)
+    result.back()  # backprop; accumulate gradients
+    result.grad(m.param("w"))  # obtain dm/dw
+    # 9
+    result.grad(m.input("x"))  # obtain dm/dx
+    # 33
+    ```
+
+### Composite models and visualization
+You can visualize a computational graph as
+follows:
+```python
+from zkynet.visual import plot_cg
+
+m = SimpleModel()
+result = m(3)
+plot_cg(result.root, wait=2, title="simpel model")
+```
+This shows:
+
+![cg-simple](https://user-images.githubusercontent.com/7720184/167731761-bf651910-1a2a-463e-9384-41a4295c9f10.png)
+
+
+As a more useful example, we will visualize the computational graph
+for a few models. First, let's define a few more complex
+models that are composed of the `SimpleModel`.
+There are four cases in total:
+
+**NO weight sharing, NO input sharing:**
+```python
+class CompositeModel_NoWeightSharing_DifferentInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),
+                                 cg.Variable("x2")))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel()
+        self._m2 = SimpleModel()
+
+    def call(self, x1, x2):
+        a = self._m1(x1)
+        b = self._m2(x2)
+        return op.add(a, b)
+
+m = CompositeModel_NoWeightSharing_DifferentInputs()
+result = m(3, 4)
+plot_cg(result.root, wait=2, title="NoWeightSharing_DifferentInputs")
+```
+This generates:
+
+![cg-comp-NN](https://user-images.githubusercontent.com/7720184/167731793-d814fa88-3a23-44ae-92b5-6c7178718b47.png)
+
+
+**YES Weight sharing, NO input sharing:**
+```python
+class CompositeModel_WeightSharing_DifferentInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),
+                                 cg.Variable("x2")))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel(w0=2)
+
+    def call(self, x1, x2):
+        a = self._m1(x1)
+        b = self._m1(x2)
+        return op.add(a, b)
+
+m = CompositeModel_WeightSharing_DifferentInputs()
+result = m(3, 3)
+plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_**Different**Inputs")
+```
+This generates:
+
+![cg-comp-YN](https://user-images.githubusercontent.com/7720184/167731827-8fe3555c-94f8-461c-92e1-48b4928eb64b.png)
+
+
+**NO weight sharing, YES sharing inputs:**
+```python
+class CompositeModel_NoWeightSharing_SameInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel()
+        self._m2 = SimpleModel()
+
+    def call(self, x1):
+        a = self._m1(x1)
+        b = self._m2(x1)
+        return op.add(a, b)
+
+m = CompositeModel_NoWeightSharing_SameInputs()
+result = m(3, 4)
+plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_**No**WeightSharing_**Same**Inputs")
+```
+This generates:
+
+![cg-comp-NY](https://user-images.githubusercontent.com/7720184/167731855-7520836f-89ca-4eb6-8104-50c109c51b9b.png)
+
+
+
+
+**YES weight sharing, YES sharing inputs:**
+```python
+class CompositeModel_WeightSharing_SameInputs(cg.Module):
+    """used to test composition"""
+    def __init__(self):
+        super().__init__(inputs=(cg.Variable("x1"),))
+        # I expect the weights in the two may differ
+        self._m1 = SimpleModel()
+
+    def call(self, x1):
+        a = self._m1(x1)
+        b = self._m1(x1)
+        return op.add(a, b)
+
+m = CompositeModel_WeightSharing_SameInputs()
+result = m(3, 4)
+plot_cg(result.root, wait=2, title="test_visualize_CompositeModel_WeightSharing_**Same**Inputs")
+```
+This generates:
+
+![cg-comp-YY](https://user-images.githubusercontent.com/7720184/167731875-3d7f4476-e8a7-4037-b4a7-168dc336e77e.png)
+
+
 
 
 ## Installation
 
-Run `setup.sh` to create and activate a designated virtualenv,
-if you so desire. You should then install:
+Run `setup.sh` to create and activate a designated virtualenv.
+The first time the virtualenv is activated, the script will install
+dependency packages.
 
-```
-pip install torch torchvision
-pip install matplotlib
-pip install jupyter
-```
 
 ### Install JAX
 For some parts of the codebase, you may need to use JAX.
@@ -50,41 +254,3 @@ This will download several kaggle datasets.
  - [ ] Implement recurrent neural network
  - [ ] Implement auto-encoder
  - [ ] Implement transformer
-
-
-
-
-
-## APPENDIX: JAX
-The JAX library provides a high-level interface
-`jax.numpy` and a low-level interface `jax.lax`. The
-low-level interface is stricter, but often more
-powerful. Functions in `jax.numpy` eventually get
-passed down to calls to `jax.lax` functions.
-
-In JAX, arrays are ALWAYS immutable.
-
-The main feature of JAX is "Just-In-Time" compilation,
-which means code gets compiled the first time they
-are run. Doc says:
->Not all JAX code can be JIT compiled, as it requires array shapes to be static & known at compile time
-
-The way JAX can do JIT is because it expresses
-its operations in terms of XLA (the Accelerated Linear
-Algebra compiler).
-
-In fact, people use JAX as a deep learning framework
-too - alongside PyTorch. See [[this reddit post](https://www.reddit.com/r/MachineLearning/comments/shsfkm/d_current_state_of_jax_vs_pytorch/hv4h3k7/).
-
-### autograd
-[autograd](https://github.com/HIPS/autograd) is a library that differentiates native Python and Numpy code.
-Pytorch either uses this library or implements something like it [torch.autograd](https://pytorch.org/docs/stable/autograd.html)
-that works on Pytorch's tensors (instead of native python / numpy data structures).
-
-Autograd's `grad` function takes in a function, and gives you a function that
-computes its derivative.
-
-### Thoughts
-一开始我觉得Autograd很神奇，跟tensorflow不一样。但是，实际上他们是一样的。
-背后都有一个operation framework，只不过tensorflow是用自定义的framework，
-而autograd利用的numpy和python自带的，比较轻便罢了。本质上的原理没有区别。
