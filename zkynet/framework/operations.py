@@ -29,6 +29,10 @@ class Add(Operator):
             return b
         if inpt.short_name == "a":
             return Module.build("DAdd#a", _a_grad, self.inputs)
+        elif inpt.short_name == "b":
+            return Module.build("DAdd#a", _a_grad, self.inputs)
+        else:
+            raise ValueError(f"Unknown input {inpt.name}")
 
 
 class Multiply(Operator):

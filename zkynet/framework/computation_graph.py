@@ -271,10 +271,19 @@ class Operator(Function):
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
 
-    def grad(self, inpt):
+    def gradfn(self, inpt):
         """
-        returns gradient with respect to input.
+        Returns the gradient function of this operator in
+        the form of a Module. See _Module_ for this use case.
+        Suppose inpt represents variable v and this
+        operator represents variable u, then this resulting
+        gradient function is du/dv. **Note that it takes the
+        SAME inputs as this operator.**
+
+        Args:
+            inpt (Input): the gradient taken with respect for.
         """
+        raise NotImplementedError
 
 
 class Module(Function):
@@ -711,11 +720,21 @@ class OperatorNode(Node):
         """
         child.receive(self, gvalue)
 
-    def gradient(self, child):
+    def grad(self, child):
         """computes the gradient of the function with respect to the
         child at 'child_index'.  Mathematically, suppose the
         operator node represents variable v, and the child
         represents variable c, then this computes dv/dc
+
+        How the backwards computational graph works:
+        Just like how `pytorch's computatinoal
+        graph <https://pytorch.org/blog/computational-graphs-constructed-in-pytorch/>`_,
+        works, the backward pass builds a DAG as well. However,
+        here, **we do not (need to) represent that DAG explicitly**.
+        The gradients are abstracted as messages, and the input
+        nodes to a gradient operator are never used again (Essentailly,
+        we only build 'local' computational graphs for each
+        gradient operator without connecting them together.
 
         Args:
             child_index (int): Index of child
@@ -723,8 +742,12 @@ class OperatorNode(Node):
         Returns:
             number or array
         """
-        self.operator.gradient_function(child_index)#????
-        # TODO
+        gradfn = self.operator.gradfn(child.ref)
+        # Need to construct inputs to this function, in order to
+        # compute its gradient value. Note that we want independence
+        # between the forward graph and this gradient operator graph.
+        input_vals = (ch.value for ch in self.children)
+        return gradfn(*input_vals).value
 
 
 @dataclass(frozen=True)
@@ -806,7 +829,7 @@ class ModuleGraph:
                 sender = _senders.pop()
                 assert isinstance(sender, OperatorNode)
                 for child_index, child in enumerate(sender.children):
-                    dpdc = sender.gradient(child)
+                    dpdc = sender.grad(child)
                     sender.send(child, sender.gvalue * dpdc)   # TODO: consider logarithm space
                     _receivers.add(child)
             # conversion from receiver to sender
