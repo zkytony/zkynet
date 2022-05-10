@@ -23,6 +23,12 @@ function first_time_setup
 if [ ! -d "venv/zkynet" ]; then
     virtualenv -p python3 venv/zkynet
     source venv/zkynet/bin/activate
+
+    pip install torch torchvision
+    pip install matplotlib
+    pip install jupyter
+    pip install pomdp-py
+    pip install graphviz
 fi
 
 source_venv=true
