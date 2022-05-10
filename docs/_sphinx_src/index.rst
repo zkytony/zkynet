@@ -12,6 +12,9 @@ zkynet: exploring deep learning basics through implementations.
 
    source/README.md
 
+* :doc:`The computational graph and automatic differentiation framework <computation_graph>`
+
+
 
 Notable modules
 ---------------
