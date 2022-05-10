@@ -357,21 +357,25 @@
 <div class="viewcode-block" id="Operator.gradfn"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator.gradfn">[docs]</a>    <span class="k">def</span> <span class="nf">gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the gradient function of this operator in</span>
-<span class="sd">        the form of a Module. See _Module_ for this use case.</span>
+<span class="sd">        the form of a Module. See *Module* for this use case.</span>
 <span class="sd">        Suppose inpt represents variable v and this</span>
 <span class="sd">        operator represents variable u, then this resulting</span>
-<span class="sd">        gradient function is du/dv. **Note that it takes the</span>
-<span class="sd">        SAME inputs as this operator.**</span>
+<span class="sd">        gradient function is du/dv. **Recall that this gradient</span>
+<span class="sd">        function takes the SAME inputs as this Operator.**</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            inpt (Input): the gradient taken with respect for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a Module that represents the gradient function</span>
+<span class="sd">            of this operator with respect to inpt.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="n">Module</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;D</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_gradfn</span><span class="p">(</span><span class="n">inpt</span><span class="p">),</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">inputs_nofun</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+<div class="viewcode-block" id="Operator._gradfn"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator._gradfn">[docs]</a>    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the &#39;call_fun&#39; used when building a Module;</span>
 <span class="sd">        TO BE OVERRIDDEN.</span>
@@ -384,7 +388,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            a function that takes in *self.inputs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
 
 
 <div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>

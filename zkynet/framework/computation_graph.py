@@ -290,14 +290,18 @@ class Operator(Function):
     def gradfn(self, inpt):
         """
         Returns the gradient function of this operator in
-        the form of a Module. See _Module_ for this use case.
+        the form of a Module. See *Module* for this use case.
         Suppose inpt represents variable v and this
         operator represents variable u, then this resulting
-        gradient function is du/dv. **Note that it takes the
-        SAME inputs as this operator.**
+        gradient function is du/dv. **Recall that this gradient
+        function takes the SAME inputs as this Operator.**
 
         Args:
             inpt (Input): the gradient taken with respect for.
+
+        Returns:
+            a Module that represents the gradient function
+            of this operator with respect to inpt.
         """
 
         return Module.build(f"D{self.functional_name}#{inpt.short_name}",

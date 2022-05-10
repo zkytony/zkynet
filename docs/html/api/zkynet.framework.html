@@ -526,14 +526,18 @@ still, as defined, returns a Node object.)</p>
 <dt class="sig sig-object py" id="zkynet.framework.computation_graph.Operator.gradfn">
 <span class="sig-name descname"><span class="pre">gradfn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inpt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/framework/computation_graph.html#Operator.gradfn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Operator.gradfn" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the gradient function of this operator in
-the form of a Module. See _Module_ for this use case.
+the form of a Module. See <em>Module</em> for this use case.
 Suppose inpt represents variable v and this
 operator represents variable u, then this resulting
-gradient function is du/dv. <strong>Note that it takes the
-SAME inputs as this operator.</strong></p>
+gradient function is du/dv. <strong>Recall that this gradient
+function takes the SAME inputs as this Operator.</strong></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>inpt</strong> (<a class="reference internal" href="../computation_graph.html#zkynet.framework.computation_graph.Input" title="zkynet.framework.computation_graph.Input"><em>Input</em></a>) – the gradient taken with respect for.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a Module that represents the gradient function
+of this operator with respect to inpt.</p>
 </dd>
 </dl>
 </dd></dl>

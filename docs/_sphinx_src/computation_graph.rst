@@ -24,6 +24,7 @@ Function template specification
 .. autoclass:: zkynet.framework.computation_graph.Operator
    :members:
    :special-members:
+   :private-members:
 
 .. autoclass:: zkynet.framework.computation_graph.Module
    :members:
