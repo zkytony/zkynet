@@ -7,6 +7,7 @@ author: Kaiyu Zheng
 """
 from .. import utils
 from dataclasses import dataclass
+import numpy as np
 
 ########## Auxiliary objects ##########
 class CallSessionManager:
@@ -273,7 +274,7 @@ class Operator(Function):
         output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
-            input_nodes[i].add_parent(output_node, self.input_name(i))
+            input_nodes[i].add_parent(output_node, i)
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
@@ -290,6 +291,7 @@ class Operator(Function):
         Args:
             inpt (Input): the gradient taken with respect for.
         """
+
         return Module.build(f"D{self.functional_name}#{inpt.short_name}",
                             self._gradfn(inpt),
                             self.inputs_nofun)
@@ -369,7 +371,7 @@ class Module(Function):
             output = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                   output_val, input_nodes)
             for i in range(len(input_nodes)):
-                input_nodes[i].add_parent(output, self.input_name(i))
+                input_nodes[i].add_parent(output, i)
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output
@@ -627,8 +629,8 @@ class Node(IDObject):
             ref (Function or Input): a reference to a Function or
                 an Input object that this Node instantiates for.
             children (list): list of children nodes of this node
-            parents (dict): maps from OperatorNode (parent) to a string that
-                indicates the name of the input to the parent function that
+            parents (dict): maps from OperatorNode (parent) to an integer that
+                indicates the index of the input to the parent function that
                 this node corresponds to.
         """
         _id = self.__class__.makeID(call_id, ref)
@@ -683,17 +685,17 @@ class Node(IDObject):
     def parents(self):
         return self._parents
 
-    @property
-    def parent_input_name(self, parent):
+    def parent_input_index(self, parent):
         return self._parents[parent]
 
     @property
     def children(self):
         return self._children
 
-    def add_parent(self, parent, parent_input_name):
-        self._parents[parent] = parent_input_name
+    def add_parent(self, parent, parent_input_index):
+        self._parents[parent] = parent_input_index
 
+    ## Functions for backprop
     def receive(self, parent, gvalue):
         """receives gradient value from parent;
         This value represents dF/dv where v is the
@@ -703,7 +705,7 @@ class Node(IDObject):
         self._gradients_from_parents[parent] = gvalue
 
     def received_messages_from_all_parents(self):
-        return len(self._gradients_from_parents) == self._parents
+        return len(self._gradients_from_parents) == len(self._parents)
 
     def update_gvalue(self):
         self._gvalue = sum(self._gradients_from_parents[p]
@@ -717,7 +719,8 @@ class Node(IDObject):
         parents_str = ""
         if len(self._parents) > 0:
             parents_str = "-->["
-            for parent, parent_input_name in self._parents.items():
+            for parent, parent_input_index in self._parents.items():
+                parent_input_name = parent.ref.inputs[parent_input_index].short_name
                 parents_str += f"{parent.operator.name}:{parent_input_name};"
             parents_str += "]"
         return parents_str
@@ -790,13 +793,15 @@ class OperatorNode(Node):
         stored within nodes on this graph.
 
         Args:
-            child_index (int): Index of child
+            child (Node): child node (could be leaf or non-leaf)
 
         Returns:
             number or array
 
         """
-        gradfn = self.operator.gradfn(child.ref)
+        # need the Input object for child's slot
+        inpt = self.ref.inputs[child.parent_input_index(self)]
+        gradfn = self.operator.gradfn(inpt)
         # Need to construct inputs to this function, in order to
         # compute its gradient value. Note that we want independence
         # between the forward graph and this gradient operator graph.
@@ -863,7 +868,7 @@ class ModuleGraph:
 
         Args:
             logspace (bool): If True, then the gradient values
-                stored in each node
+                stored in each node. (Default: True)
         """
         # This can be implemented through message passing over
         # the graph. At any time, there is (1) a number of
@@ -880,16 +885,16 @@ class ModuleGraph:
         # and 'done sender' are an abstract concept we don't need
         # to track.
         _senders = []
-        _receivers = set(self.root)
+        _receivers = set({self.root})
         while not (len(_senders) == 0 and len(_receivers) == 0):
             # message passing
             while _senders:
                 sender = _senders.pop()
                 assert isinstance(sender, OperatorNode)
-                for child_index, child in enumerate(sender.children):
+                for child in sender.children:
                     dpdc = sender.grad(child)
                     if logspace:
-                        sender.send(child, sender.gvalue + dpdc)
+                        sender.send(child, np.log(sender.gvalue) + np.log(dpdc))
                     else:
                         sender.send(child, sender.gvalue * dpdc)
                     _receivers.add(child)
