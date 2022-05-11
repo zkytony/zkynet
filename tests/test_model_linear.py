@@ -28,6 +28,13 @@ def test_linear_operator():
     torch_linfn.bias = torch.nn.Parameter(torch.tensor(b0))
     assert (torch_linfn(torch.tensor(x)) == torch.tensor(y.value)).all()
 
+    y.back()
+    print(y.grad(linfn.param("W")))
+
+    torch_y = torch_linfn(torch.tensor(x))
+    import pdb; pdb.set_trace()
+
+
 def run():
     test_linear_operator()
 
