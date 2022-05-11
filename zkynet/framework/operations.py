@@ -1,5 +1,9 @@
 """
 Hard-coded operations
+
+The operations here are the most basic building
+blocks. For more complex operations, look into
+specific models in zkynet.models
 """
 import numpy as np
 from .computation_graph import Operator, Variable, Module
