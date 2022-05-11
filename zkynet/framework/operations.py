@@ -45,7 +45,7 @@ class Multiply(Operator):
         super().__init__(inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
-        return a.value * b.value
+        return np.dot(a.value, b.value)
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
