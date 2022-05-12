@@ -7,7 +7,7 @@ author: Kaiyu Zheng
 """
 from .. import utils
 from dataclasses import dataclass
-import numpy as np
+import jax.numpy as jnp
 
 ########## Auxiliary objects ##########
 class CallSessionManager:
@@ -260,6 +260,14 @@ class Function(TemplateObject):
         # The implementation is specific to Operator and Module. See below.
         raise NotImplementedError
 
+    def _verify_jax_array_type(self, *input_vals):
+        """Ensure that we are only dealing with
+        jax array"""
+        for input_val in input_vals:
+            if not isinstance(input_val, Node) and not isinstance(input_val, Input):
+                if not isinstance(input_val, jnp.ndarray):
+                    raise TypeError("Values to inputs must be JAX arrays")
+
 
 class Operator(Function):
     """
@@ -274,7 +282,7 @@ class Operator(Function):
     """
     def __call__(self, *input_vals):
         _GLOBAL_CALL_MANAGER.call_begin(self)
-
+        self._verify_jax_array_type(*input_vals)
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes)
         if isinstance(output_val, Node):
@@ -362,7 +370,7 @@ class Module(Function):
         return a OperatorNode.
         """
         _GLOBAL_CALL_MANAGER.call_begin(self)
-
+        self._verify_jax_array_type(*input_vals)
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes)
         if isinstance(output_val, Node)\
@@ -375,7 +383,7 @@ class Module(Function):
             if _GLOBAL_CALL_MANAGER.trigger_function.name == self.name:
                 # this is the trigger function;
                 output = ModuleGraph(_GLOBAL_CALL_MANAGER.call_id,
-                                   self, output_val)
+                                     self, output_val)
             else:
                 # so we just return output_val (OperatorNode)
                 output = output_val

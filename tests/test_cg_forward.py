@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
 from zkynet.framework import cg, op
 from zkynet.visual import plot_cg
-import numpy as np
+import jax.numpy as jnp
 import time
 
 description="testing forward construction for the computational graph framework"
@@ -17,6 +17,7 @@ class MyTestModel1(cg.Module):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1):
+        w0 = jnp.array([w0])
         super().__init__(inputs=(cg.Variable("x"),),
                          params=(cg.Parameter("w", w0),))
 
@@ -83,7 +84,7 @@ def test_model1_forward():
     m = MyTestModel1()
     assert m.param("w").value == 1  # initial value
 
-    x = 3
+    x = jnp.array(3)
     _start_time = time.time()
     result = m(x)
     print("forward pass time: {}s".format(time.time() - _start_time))
@@ -96,29 +97,29 @@ def test_model1_forward():
 def test_visualize_cg():
     m = MyTestModel1()
     assert m._params["w"] == 1  # initial value
-    x = np.array([3])
+    x = jnp.array(3)
     result = m(x)
     plot_cg(result.root, save_path="/tmp/cg-simple", wait=2, title="test_visualize_cg (simple)")
 
 
 def test_visualize_CompositeModel_NoWeightSharing_DifferentInputs():
     m = CompositeModel_NoWeightSharing_DifferentInputs()
-    result = m(3, 4)
+    result = m(jnp.array(3), jnp.array(4))
     plot_cg(result.root, save_path="/tmp/cg-comp-NN", wait=2, title="test_visualize_**No**WeightSharing_**Different**Inputs")
 
 def test_visualize_CompositeModel_WeightSharing_DifferentInputs():
     m = CompositeModel_WeightSharing_DifferentInputs()
-    result = m(3, 3)
+    result = m(jnp.array(3), jnp.array(3))
     plot_cg(result.root, save_path="/tmp/cg-comp-YN", wait=2, title="test_visualize_CompositeModel_WeightSharing_**Different**Inputs")
 
 def test_visualize_CompositeModel_NoWeightSharing_SameInputs():
     m = CompositeModel_NoWeightSharing_SameInputs()
-    result = m(3, 4)
+    result = m(jnp.array(3), jnp.array(4))
     plot_cg(result.root, save_path="/tmp/cg-comp-NY", wait=2, title="test_visualize_CompositeModel_**No**WeightSharing_**Same**Inputs")
 
 def test_visualize_CompositeModel_WeightSharing_SameInputs():
     m = CompositeModel_WeightSharing_SameInputs()
-    result = m(3, 4)
+    result = m(jnp.array(3), jnp.array(4))
     plot_cg(result.root, save_path="/tmp/cg-comp-YY", wait=2, title="test_visualize_CompositeModel_WeightSharing_**Same**Inputs")
 
 

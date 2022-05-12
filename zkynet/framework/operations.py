@@ -5,7 +5,7 @@ The operations here are the most basic building
 blocks. For more complex operations, look into
 specific models in zkynet.models
 """
-import numpy as np
+import jax.numpy as jnp
 from .computation_graph import Operator, Variable, Module
 
 class Identity(Operator):
@@ -45,7 +45,7 @@ class Multiply(Operator):
         super().__init__(inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
-        return np.dot(a.value, b.value)
+        return jnp.dot(a.value, b.value)
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
@@ -66,7 +66,7 @@ class Square(Operator):
         super().__init__(inputs=(Variable("x"),))
 
     def call(self, x):
-        return np.square(x.value)
+        return jnp.square(x.value)
 
     def _gradfn(self, inpt):
         def _x_grad(x):

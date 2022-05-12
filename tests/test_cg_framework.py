@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
 import copy
 from zkynet.framework import cg, op
-
+import jax.numpy as jnp
 
 description="testing CG framework"
 
@@ -16,6 +16,7 @@ class MyTestModel1(cg.Module):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1):
+        w0 = jnp.array([w0])
         super().__init__(inputs=(cg.Variable("x"),),
                          params=(cg.Parameter("w", w0),))
 
@@ -33,8 +34,8 @@ class MyTestModel1(cg.Module):
 # have the same values.
 def test_call_integrity():
     m = MyTestModel1()
-    result1 = m(3)
-    result2 = m(3)
+    result1 = m(jnp.array(3))
+    result2 = m(jnp.array(3))
     assert isinstance(result1, cg.ModuleGraph)
     assert isinstance(result2, cg.ModuleGraph)
 
@@ -68,8 +69,8 @@ def test_call_integrity():
 # - they correspond to the same template (Input or Function)
 def test_node_equality():
     m = MyTestModel1()
-    result1 = m(3)
-    result2 = m(3)
+    result1 = m(jnp.array(3))
+    result2 = m(jnp.array(3))
     all_nodes1 = cg.get_all_nodes(result1.root)
     all_nodes2 = cg.get_all_nodes(result2.root)
     # If we overwrite the ID of two nodes that

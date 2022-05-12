@@ -2,6 +2,10 @@
 
 Exploring deep learning basics through implementations.
 
+Key points to note:
+- all inputs to functions represented using our computational graph are
+  expected to be [JAX arrays](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.array.html).
+
 ## Examples
 
 ### Proof-of-concept model

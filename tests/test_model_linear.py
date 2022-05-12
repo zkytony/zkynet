@@ -6,19 +6,19 @@ ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ABS_PATH, '../'))
 
 from zkynet.models import fcn
-import numpy as np
+import jax.numpy as jnp
 import torch
 
 description="test linear model"
 
 def test_linear_operator():
-    W0 = np.array([[1, -1, 5],
-                   [0, 14, -9]], dtype=np.float32)
-    b0 = np.array([1, 4, -1], dtype=np.float32)
+    W0 = jnp.array([[1, -1, 5],
+                    [0, 14, -9]], dtype=jnp.float32)
+    b0 = jnp.array([1, 4, -1], dtype=jnp.float32)
     linfn = fcn.Linear(W0, b0)
-    x = np.array([[1, -12]], dtype=np.float32)
+    x = jnp.array([[1, -12]], dtype=jnp.float32)
     y = linfn(x)
-    assert (y.value == np.array([[2, -165, 112]])).all()
+    assert (y.value == jnp.array([[2, -165, 112]])).all()
 
     # For gradient, we will test against pytorch;
     # btw: here is how you manually set weights for
