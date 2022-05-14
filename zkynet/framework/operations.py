@@ -52,7 +52,7 @@ class Multiply(Operator):
         return self._call(a.value, b.value)
 
     def _call(self, a, b):
-        return jnp.dot(a, b)
+        return a * b  # element wise multiplication
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
