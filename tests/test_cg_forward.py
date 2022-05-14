@@ -17,7 +17,7 @@ class MyTestModel1(cg.Module):
     where x is an input and w is a parameter.
     """
     def __init__(self, w0=1.):
-        w0 = jnp.array(w0)
+        w0 = jnp.array([w0])
         super().__init__(inputs=(cg.Variable("x"),),
                          params=(cg.Parameter("w", w0),))
 
@@ -47,7 +47,7 @@ class CompositeModel_WeightSharing_DifferentInputs(cg.Module):
         super().__init__(inputs=(cg.Variable("x1"),
                                  cg.Variable("x2")))
         # I expect the weights in the two may differ
-        self._m1 = MyTestModel1(w0=2)
+        self._m1 = MyTestModel1(w0=2.)
 
     def call(self, x1, x2):
         a = self._m1(x1)
