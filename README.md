@@ -292,3 +292,20 @@ This will download several kaggle datasets.
  - [ ] Implement recurrent neural network
  - [ ] Implement auto-encoder
  - [ ] Implement transformer
+
+## Troubleshooting JAX
+If you experience the following error messages when performing a seemingly simple
+operation such as `jnp.dot`,
+```
+2022-05-14 00:05:33.943054: E external/org_tensorflow/tensorflow/stream_executor/cuda/cuda_blas.cc:232] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2022-05-14 00:05:33.943074: E external/org_tensorflow/tensorflow/stream_executor/cuda/cuda_blas.cc:234] Failure to initialize cublas may be due to OOM (cublas needs some free memory when you
+ initialize it, and your deep-learning framework may have preallocated more than its fair share), or may be because this binary was not built with support for the GPU in your machine.
+2022-05-14 00:05:33.943104: F external/org_tensorflow/tensorflow/compiler/xla/service/gpu/gemm_algorithm_picker.cc:324] Check failed: stream->parent()->GetBlasGemmAlgorithms(&algorithms)
+Aborted (core dumped)
+```
+Then, according to [this github thread](https://github.com/google/jax/issues/7118),
+there maybe something funky with your CUDA / JAX version stuff. And you should run
+```
+export XLA_PYTHON_CLIENT_PREALLOCATE=false
+```
+although I am not sure if with that GPU still gets used? **YES. I CAN CONFIRM THAT IT IS USED; The memory is dynamically allocated.**
