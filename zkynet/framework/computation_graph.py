@@ -733,7 +733,7 @@ class Node(IDObject):
         an OperatorNode that contains an identity function
         as the parent so the gradient is 1 (i.e. dF/dF = 1)"""
         if len(self._parents) == 0:
-            self._gvalue = 1
+            self._gvalue = jnp.array(1.)
         else:
             self._gvalue = sum(self._gradients_from_parents[p]
                                for p in self._parents)
@@ -922,7 +922,10 @@ class ModuleGraph:
                 assert isinstance(sender, OperatorNode)
                 for child in sender.children:
                     dpdc = sender.grad(child)
-                    sender.send(child, jnp.multiply(sender.gvalue, dpdc))
+                    try:
+                        sender.send(child, jnp.multiply(sender.gvalue, dpdc))
+                    except Exception:
+                        sender.send(child, jnp.dot(sender.gvalue, dpdc))
                     _receivers.add(child)
             # conversion from receiver to sender
             _still_receivers = set()
