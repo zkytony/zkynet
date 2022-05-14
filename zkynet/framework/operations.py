@@ -6,6 +6,7 @@ blocks. For more complex operations, look into
 specific models in zkynet.models
 """
 import jax.numpy as jnp
+from jax import grad as jaxgrad
 from .computation_graph import Operator, Variable, Module
 
 class Identity(Operator):
@@ -24,13 +25,16 @@ class Add(Operator):
         super().__init__(inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
-        return a.value + b.value
+        return self._call(a.value, b.value)
+
+    def _call(self, a, b):
+        return a + b
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
-            return 1
+            return jaxgrad(self._call, argnums=0)(a.value, b.value)
         def _b_grad(a, b):
-            return 1
+            return jaxgrad(self._call, argnums=1)(a.value, b.value)
         if inpt.short_name == "a":
             return _a_grad
         elif inpt.short_name == "b":
@@ -45,13 +49,16 @@ class Multiply(Operator):
         super().__init__(inputs=(Variable("a"), Variable("b")))
 
     def call(self, a, b):
-        return jnp.dot(a.value, b.value)
+        return self._call(a.value, b.value)
+
+    def _call(self, a, b):
+        return jnp.dot(a, b)
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
-            return b.value
+            return jaxgrad(self._call, argnums=0)(a.value, b.value)
         def _b_grad(a, b):
-            return a.value
+            return jaxgrad(self._call, argnums=1)(a.value, b.value)
         if inpt.short_name == "a":
             return _a_grad
         elif inpt.short_name == "b":
@@ -66,11 +73,14 @@ class Square(Operator):
         super().__init__(inputs=(Variable("x"),))
 
     def call(self, x):
-        return jnp.square(x.value)
+        return self._call(x.value)
+
+    def _call(self, x):
+        return jnp.square(x)
 
     def _gradfn(self, inpt):
         def _x_grad(x):
-            return 2*x.value
+            return jaxgrad(self._call, argnums=0)(x.value)
         if inpt.short_name == "x":
             return _x_grad
         else:

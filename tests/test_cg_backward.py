@@ -16,27 +16,27 @@ description="testing backprop gradient calculations for the computational graph 
 
 def test_model1_gradient():
     m = MyTestModel1()
-    result = m(jnp.array(3))
+    result = m(jnp.array(3.))
     result.back()
     # dF/dw = x^2 = 9
-    assert result.grad(m.param("w")) == 9
+    assert result.grad(m.param("w")) == 9.
     # dF/dx = 6w+27 = 33
-    assert result.grad(m.input("x")) == 33
+    assert result.grad(m.input("x")) == 33.
 
 def test_model1_gradient_vectorized():
     m = MyTestModel1()
-    result = m(jnp.array([3, 4, 5]))
+    result = m(jnp.array([3., 4., 5.]))
     result.back()
-    assert jnp.all(result.grad(m.param("w")) == jnp.array([9, 16, 25]))
-    assert jnp.all(result.grad(m.input("x")) == jnp.array([33, 56, 85]))
+    assert jnp.all(result.grad(m.param("w")) == jnp.array([9., 16., 25.]))
+    assert jnp.all(result.grad(m.input("x")) == jnp.array([33., 56., 85.]))
 
 def test_composite_model_gradient():
     cm1 = CompositeModel_NoWeightSharing_DifferentInputs()
-    result = cm1(jnp.array(3), jnp.array(4))
+    result = cm1(jnp.array(3.), jnp.array(4))
     result.back()
-    assert result.grad(cm1._m1.param("w")) == 9
-    assert result.grad(cm1._m2.param("w")) == 16
-    assert result.grad(cm1.input("x1")) == 33
+    assert result.grad(cm1._m1.param("w")) == 9.
+    assert result.grad(cm1._m2.param("w")) == 16.
+    assert result.grad(cm1.input("x1")) == 33.
 
     cm2 = CompositeModel_NoWeightSharing_SameInputs()
     result = cm2(jnp.array(3))
