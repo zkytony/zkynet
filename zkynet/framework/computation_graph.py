@@ -922,7 +922,7 @@ class ModuleGraph:
                 assert isinstance(sender, OperatorNode)
                 for child in sender.children:
                     dpdc = sender.grad(child)
-                    sender.send(child, jnp.dot(sender.gvalue, dpdc))
+                    sender.send(child, jnp.multiply(sender.gvalue, dpdc))
                     _receivers.add(child)
             # conversion from receiver to sender
             _still_receivers = set()
