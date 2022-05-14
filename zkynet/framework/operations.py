@@ -6,7 +6,7 @@ blocks. For more complex operations, look into
 specific models in zkynet.models
 """
 import jax.numpy as jnp
-from jax import grad as jaxgrad
+from jax import jacrev
 from .computation_graph import Operator, Variable, Module
 
 class Identity(Operator):
@@ -32,9 +32,9 @@ class Add(Operator):
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
-            return jaxgrad(self._call, argnums=0)(a.value, b.value)
+            return jacrev(self._call, argnums=0)(a.value, b.value)
         def _b_grad(a, b):
-            return jaxgrad(self._call, argnums=1)(a.value, b.value)
+            return jacrev(self._call, argnums=1)(a.value, b.value)
         if inpt.short_name == "a":
             return _a_grad
         elif inpt.short_name == "b":
@@ -56,9 +56,9 @@ class Multiply(Operator):
 
     def _gradfn(self, inpt):
         def _a_grad(a, b):
-            return jaxgrad(self._call, argnums=0)(a.value, b.value)
+            return jacrev(self._call, argnums=0)(a.value, b.value)
         def _b_grad(a, b):
-            return jaxgrad(self._call, argnums=1)(a.value, b.value)
+            return jacrev(self._call, argnums=1)(a.value, b.value)
         if inpt.short_name == "a":
             return _a_grad
         elif inpt.short_name == "b":
@@ -80,7 +80,7 @@ class Square(Operator):
 
     def _gradfn(self, inpt):
         def _x_grad(x):
-            return jaxgrad(self._call, argnums=0)(x.value)
+            return jacrev(self._call, argnums=0)(x.value)
         if inpt.short_name == "x":
             return _x_grad
         else:
