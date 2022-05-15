@@ -16,7 +16,7 @@ def test_linear_operator():
                     [0, 14, -9]], dtype=jnp.float32)
     b0 = jnp.array([1, 4, -1], dtype=jnp.float32)
     linfn = fcn.Linear(W0, b0)
-    x = jnp.array([[1, -12]], dtype=jnp.float32)
+    x = jnp.array([1, -12], dtype=jnp.float32)
     y = linfn(x)
     assert (y.value == jnp.array([[2, -165, 112]])).all()
 

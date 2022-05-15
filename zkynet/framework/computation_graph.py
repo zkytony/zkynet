@@ -847,7 +847,6 @@ class OperatorNode(Node):
             vjp_fun = self.operator.make_vjp(*input_vals)
             return vmap(vjp_fun)(self.gvalue)[child.parent_input_index(self)]
 
-
 class ModuleGraph:
     """
     A ModuleGraph is a computational graph that
