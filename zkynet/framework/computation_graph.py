@@ -8,6 +8,7 @@ author: Kaiyu Zheng
 from .. import utils
 from dataclasses import dataclass
 import jax.numpy as jnp
+from jax import vjp, vmap
 
 ########## Auxiliary objects ##########
 class CallSessionManager:
@@ -835,6 +836,17 @@ class OperatorNode(Node):
         input_vals = (ch.value for ch in self.children)
         return gradfn(*input_vals).value
 
+    def vjp(self, child):
+        input_vals = (ch.value for ch in self.children)
+        if len(self.gvalue.shape) == 0 and self.gvalue == jnp.array(1.):
+            inpt = self.ref.inputs[child.parent_input_index(self)]
+            # we just multiplied the Jacobian by identity
+            gradfn = self.operator.gradfn(inpt)
+            return gradfn(*input_vals).value
+        else:
+            vjp_fun = self.operator.make_vjp(*input_vals)
+            return vmap(vjp_fun)(self.gvalue)[child.parent_input_index(self)]
+
 
 class ModuleGraph:
     """
@@ -921,12 +933,8 @@ class ModuleGraph:
                 sender = _senders.pop()
                 assert isinstance(sender, OperatorNode)
                 for child in sender.children:
-                    dpdc = sender.grad(child)
-                    try:
-                        sender.send(child, sender.gvalue * dpdc)
-                    except ValueError:
-                        # THIS IS JUST HACKY. (I JUST DON'T KNOW WHAT'S RIGHT)
-                        sender.send(child, jnp.dot(sender.gvalue, dpdc))
+                    vjp = sender.vjp(child)
+                    sender.send(child, vjp)
                     _receivers.add(child)
             # conversion from receiver to sender
             _still_receivers = set()

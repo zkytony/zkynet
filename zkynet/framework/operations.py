@@ -6,7 +6,7 @@ blocks. For more complex operations, look into
 specific models in zkynet.models
 """
 import jax.numpy as jnp
-from jax import jacrev
+from jax import jacrev, vjp
 from .computation_graph import Operator, Variable, Module
 
 class Identity(Operator):
@@ -43,6 +43,10 @@ class Add(Operator):
             raise ValueError(
                 f"Unknown input for {self.functional_name}: {inpt.short_name}")
 
+    def make_vjp(self, a, b):
+        _, vjp_fun = vjp(self._call, a, b)
+        return vjp_fun
+
 
 class Multiply(Operator):
     def __init__(self):
@@ -67,6 +71,11 @@ class Multiply(Operator):
             raise ValueError(
                 f"Unknown input for {self.functional_name}: {inpt.short_name}")
 
+    def make_vjp(self, a, b):
+        _, vjp_fun = vjp(self._call, a, b)
+        return vjp_fun
+
+
 
 class Square(Operator):
     def __init__(self):
@@ -86,6 +95,10 @@ class Square(Operator):
         else:
             raise ValueError(
                 f"Unknown input for {self.functional_name}: {inpt.short_name}")
+
+    def make_vjp(self, x):
+        _, vjp_fun = vjp(self._call, x)
+        return vjp_fun
 
 
 def add(a, b):
