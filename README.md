@@ -2,6 +2,11 @@
 
 Exploring deep learning basics through implementations.
 
+**Caveat: The autodiff of the current framework only works for
+scalar input and output. Jacobians are not computed.**
+
+
+
 ## Examples
 
 ### Proof-of-concept model
