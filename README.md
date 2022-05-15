@@ -1,6 +1,6 @@
-# zkynet
+# zkynet: Exploring deep learning basics through implementations
 
-Exploring deep learning basics through implementations.
+An autodiff framework with a PyTorch-like API that supports tensor inputs and outputs.
 
 Key points to note:
 - all inputs to functions represented using our computational graph are
