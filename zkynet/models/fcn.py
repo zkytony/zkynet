@@ -46,6 +46,6 @@ class Linear(cg.Module):
         """returns :math:`p`, the output dimension"""
         return self.param("W").value.shape[1]
 
-    def call(self, X):
-        y = op.add(op.mult(X, self.param("W")), self.param("b"))
+    def call(self, x):
+        y = op.add(op.dot(x, self.param("W")), self.param("b"))
         return y
