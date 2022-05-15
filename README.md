@@ -6,6 +6,11 @@ Key points to note:
 - all inputs to functions represented using our computational graph are
   expected to be [JAX arrays](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.array.html).
 
+**Caveat: The autodiff of the current framework only works for
+scalar input and output. Jacobians are not computed.**
+
+
+
 ## Examples
 
 ### Proof-of-concept model
