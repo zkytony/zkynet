@@ -922,10 +922,10 @@ class ModuleGraph:
                 assert isinstance(sender, OperatorNode)
                 for child in sender.children:
                     dpdc = sender.grad(child)
-                    # THIS IS JUST HACKY. (I JUST DON'T KNOW WHAT'S RIGHT)
                     try:
-                        sender.send(child, jnp.multiply(sender.gvalue, dpdc))
-                    except Exception:
+                        sender.send(child, sender.gvalue * dpdc)
+                    except ValueError:
+                        # THIS IS JUST HACKY. (I JUST DON'T KNOW WHAT'S RIGHT)
                         sender.send(child, jnp.dot(sender.gvalue, dpdc))
                     _receivers.add(child)
             # conversion from receiver to sender
