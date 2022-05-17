@@ -14,8 +14,11 @@ from test_cg_forward import (MyTestModel1,
 
 description="testing backprop gradient calculations for the computational graph framework"
 
+def model1fun(x,w):
+    return (x + w) * x**2
 
-def test_model1_gradient():
+
+def test_model1_gradient_scalar_input():
     m = MyTestModel1()
     result = m(jnp.array(3.))
     result.back()
@@ -26,10 +29,7 @@ def test_model1_gradient():
     print("scalar input pass.")
 
 
-def test_model1_gradient_vectorized():
-    def model1fun(x,w):
-        return (x + w) * x**2
-
+def test_model1_gradient_vector_input():
     m = MyTestModel1()
     # 1D (vector)
     x = jnp.array([3., 4., 5.])
@@ -43,6 +43,9 @@ def test_model1_gradient_vectorized():
     assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
     print("vector input pass.")
 
+
+def test_model1_gradient_matrix_input():
+    m = MyTestModel1()
     # 2D (matrix)
     x2 = jnp.array([[3., 4., 5.],
                     [5., 8., 10.],
@@ -56,13 +59,12 @@ def test_model1_gradient_vectorized():
     assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
     print("matrix input pass.")
 
+def test_model1_gradient_tensor_input_no_weight_broadcasting():
     # 3D (tensor)
     x3 = jnp.array([[[[3., 4., 5.]],
                      [[-1., 2., -3.]]],
                     [[[2., 0., 5.]],
                      [[3., 1., -1.]]]])
-
-    # w = jnp.array(1.)
     w3 = jnp.array([[[[1., 2., 1.]],
                      [[1., 1., 1.]]],
                     [[[-1., 1., 1.]],
@@ -74,9 +76,24 @@ def test_model1_gradient_vectorized():
     jax_w_grad = jacrev(model1fun, argnums=1)(x3, m.param("w").value)
     assert jnp.all(result.grad(m.input("x")) == jax_x_grad)
     assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
-    print("tensor input pass.")
+    print("tensor input pass (no weight broadcasting).")
 
+def test_model1_gradient_tensor_input_with_weight_broadcasting():
+    # 3D (tensor)
+    x3 = jnp.array([[[[3., 4., 5.]],
+                     [[-1., 2., -3.]]],
+                    [[[2., 0., 5.]],
+                     [[3., 1., -1.]]]])
 
+    w = jnp.array(1.)
+    m = MyTestModel1(w0=w)
+    result = m(x3)
+    result.back()
+    jax_x_grad = jacrev(model1fun, argnums=0)(x3, m.param("w").value)
+    jax_w_grad = jacrev(model1fun, argnums=1)(x3, m.param("w").value)
+    assert jnp.all(result.grad(m.input("x")) == jax_x_grad)
+    assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
+    print("tensor input pass (with weight broadcasting).")
 
 def test_composite_model_gradient():
     cm1 = CompositeModel_NoWeightSharing_DifferentInputs()
@@ -108,11 +125,15 @@ def test_composite_model_gradient():
     print("dM4/dw", result.grad(cm4._m1.param("w")))
     print("dM4/dx1", result.grad(cm4.input("x1")))
     print("---")
+    print("composite model gradient pass.")
 
 
 def run():
-    test_model1_gradient()
-    test_model1_gradient_vectorized()
+    test_model1_gradient_scalar_input()
+    test_model1_gradient_vector_input()
+    test_model1_gradient_matrix_input()
+    test_model1_gradient_tensor_input_no_weight_broadcasting()
+    test_model1_gradient_tensor_input_with_weight_broadcasting()
     test_composite_model_gradient()
 
 if __name__ == "__main__":
