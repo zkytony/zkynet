@@ -867,6 +867,16 @@ class OperatorNode(Node):
         return gradfn(*input_vals).value
 
     def vjp(self, child):
+        """
+        The Vector Jacobian Product. This is roughtly computing
+        the chain rule from the function's output up to the child:
+
+        dF/dp * dp/dc.
+
+        Here, p = self, c = child, and F = Module. The dp/dc is
+        the Jacobian matrix (in practice a tensor), while dF/dp is
+        the "vector" (which in practice can be a tensor).
+        """
         input_vals = (ch.value for ch in self.children)
         vjp_fun = self.operator.make_vjp(*input_vals)
         # We do vmap multiple times over vjp_fun to get a function that can
@@ -875,7 +885,11 @@ class OperatorNode(Node):
         # We know that vjp works for 1D tensor, vmap(vjp) works for 2D,
         # vmap(vmap(vjp)) works for 3D, etc.
         tensor_vjp_fun = vjp_fun
-        # Number of tensor dimensions we shall vectorize the vjp function;
+        # Number of tensor dimensions we shall vectorize the vjp function over;
+        # It is the difference between the dimension vjp can handle (which is
+        # based on the dimension of the output tensor of this operator, stored
+        # in self.value) and the desired dimension we need (which is based on
+        # self.gvalue, which can be seen as df/dp)
         vec_tensor_dims = len(self.gvalue.shape)-len(self.value.shape)
         if DEBUG:
             ss = "vmap(vjp_fun"
