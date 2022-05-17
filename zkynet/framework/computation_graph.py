@@ -872,9 +872,10 @@ class OperatorNode(Node):
 
         dF/dp * dp/dc.
 
-        Here, p = self, c = child, and F = Module. The dp/dc is
-        the Jacobian matrix (in practice a tensor), while dF/dp is
-        the "vector" (which in practice can be a tensor).
+        Here, p = self, c = child, and F = Module. The dp/dc is the
+        Jacobian matrix (in practice a tensor) specific to the underlying
+        operator.  while dF/dp is the "vector" (which in practice can be a
+        tensor), stored in self.gvalue.
         """
         input_vals = (ch.value for ch in self.children)
         vjp_fun = self.operator.make_vjp(*input_vals)
