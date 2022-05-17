@@ -23,6 +23,8 @@ def dot(t1, t2):
     # This is developed through trial and error;
     if len(t1.shape) <= 2 and len(t2.shape) <= 2:
         return jnp.dot(t1, t2)
+    elif len(t1.shape) <= 4 and len(t2.shape) <= 4:
+        return jnp.tensordot(t1, t2)
     else:
         # this seems to be the right call for tensor product
         # (though I am not sure why)
@@ -89,7 +91,7 @@ def test_tensor_input():
 def run():
     test_scalar_input()
     test_vector_input()
-    # test_matrix_input()
+    test_matrix_input()
     test_tensor_input()
 
 if __name__ == "__main__":
