@@ -122,10 +122,10 @@ class Function(TemplateObject):
             f"all objects in 'inputs' must be of type Variable"
 
         self._inputs = inputs  # will maintain the order
-        self._inputs_dict = {}  # maps from input short name to input
-        for inp in self._inputs:
+        self._inputs_dict = {}  # maps from input short name to input index
+        for i, inp in enumerate(self._inputs):
             inp.fun = self
-            self._inputs_dict[inp.short_name] = inp
+            self._inputs_dict[inp.short_name] = i
 
         if params is None:
             params = set()
@@ -173,6 +173,11 @@ class Function(TemplateObject):
         return self._inputs[i].name
 
     def input(self, short_name):
+        if short_name not in self._inputs_dict:
+            raise ValueError(f"{short_name} is not an input.")
+        return self._inputs[self.input_index(short_name)]
+
+    def input_index(self, short_name):
         if short_name not in self._inputs_dict:
             raise ValueError(f"{short_name} is not an input.")
         return self._inputs_dict[short_name]
@@ -287,7 +292,8 @@ class Operator(Function):
         input_nodes = self._construct_input_nodes(*input_vals)
         output_val = self.call(*input_nodes)
         if isinstance(output_val, Node):
-            raise ValueError("The output of Operator's 'call' function must NOT be a Node")
+            raise ValueError("The output of Operator's 'call' function must NOT be a Node;"
+                             "Must be a jax.ndarray.")
         output_node = OperatorNode(_GLOBAL_CALL_MANAGER.call_id, self,
                                    output_val, input_nodes)
         for i in range(len(input_nodes)):
@@ -295,6 +301,37 @@ class Operator(Function):
 
         _GLOBAL_CALL_MANAGER.call_end(self)
         return output_node
+
+    def call(self, *input_nodes):
+        """We will use JAX to implement the operator's logic. As a result,
+        an Operator will have a _call function that takes in jax arrays
+        as inputs (each is the value of the corresponding input node).
+        """
+        return self._op_impl(*(n.value for n in input_nodes))
+
+    def _op_impl(self, *input_vals_ndarrays):
+        raise NotImplementedError
+
+    def _gradfn(self, inpt):
+        """
+        Returns the 'call_fun' used when building a Module,
+        that represents the gradient of this operator with
+        respect to input.  Using JAX.
+        TO BE OVERRIDDEN.
+
+        Args:
+            inpt (Input): the gradient taken with respect for.
+            *input_vals (list-like): the values to input when
+                calling the gradient function.  Recall that
+                df(a,b)/da could be written as df/da(a,b).
+        Returns:
+            a function that takes in *self.inputs
+        """
+        def _grad_call(*input_nodes):
+            # This matches the signature of 'call' in Function
+            inpt_i = self.input_index(inpt.short_name)
+            return jacrev(self._op_impl, argnums=inpt_i)(*(n.value for n in input_nodes))
+        return _grad_call
 
     def gradfn(self, inpt):
         """
@@ -317,21 +354,6 @@ class Operator(Function):
                             self._gradfn(inpt),
                             self.inputs_nofun)
 
-    def _gradfn(self, inpt):
-        """
-        Returns the 'call_fun' used when building a Module;
-        TO BE OVERRIDDEN.
-
-        Args:
-            inpt (Input): the gradient taken with respect for.
-            *input_vals (list-like): the values to input when
-                calling the gradient function.  Recall that
-                df(a,b)/da could be written as df/da(a,b).
-        Returns:
-            a function that takes in *self.inputs
-        """
-        raise NotImplementedError
-
 
 class Module(Function):
     """A Module is a function that is intended to be user-defined,
@@ -353,7 +375,8 @@ class Module(Function):
         Args:
             call_fun (function): function to be called. This
                 supports dynamic construction of a new module
-                with a custom call function.
+                with a custom call function. This function has
+                the same definition as the 'call' in Function.
         """
         super().__init__(inputs, params=params, functional_name=functional_name)
         self._call_fun = call_fun
@@ -835,6 +858,18 @@ class OperatorNode(Node):
         # between the forward graph and this gradient operator graph.
         input_vals = (ch.value for ch in self.children)
         return gradfn(*input_vals).value
+
+
+    def vjp(self, child):
+        input_vals = (ch.value for ch in self.children)
+        if len(self.gvalue.shape) == 0 and self.gvalue == jnp.array(1.):
+            inpt = self.ref.inputs[child.parent_input_index(self)]
+            # we just multiplied the Jacobian by identity
+            gradfn = self.operator.gradfn(inpt)
+            return gradfn(*input_vals).value
+        else:
+            vjp_fun = self.operator.make_vjp(*input_vals)
+            return vmap(vjp_fun)(self.gvalue)[child.parent_input_index(self)]
 
 
 class ModuleGraph:
