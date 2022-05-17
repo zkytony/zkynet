@@ -47,8 +47,8 @@ def test_model1_gradient_vectorized():
                     [3., 3., -7.],
                     [5., 4., 10.]])
     result = m(x2)
-    jax_x_grad = jacrev(model1fun, argnums=0)(x2,m.param("w").value)
-    jax_w_grad = jacrev(model1fun, argnums=1)(x2,m.param("w").value)
+    jax_x_grad = jacrev(model1fun, argnums=0)(x2, m.param("w").value)
+    jax_w_grad = jacrev(model1fun, argnums=1)(x2, m.param("w").value)
     result.back()
     assert jnp.all(result.grad(m.input("x")) == jax_x_grad)
     assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
@@ -87,7 +87,7 @@ def test_composite_model_gradient():
 
 
 def run():
-    test_model1_gradient()
+    # test_model1_gradient()
     test_model1_gradient_vectorized()
     test_composite_model_gradient()
 
