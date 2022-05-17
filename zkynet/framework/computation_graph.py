@@ -8,6 +8,7 @@ author: Kaiyu Zheng
 from .. import utils
 from dataclasses import dataclass
 import jax.numpy as jnp
+from jax import jacrev
 
 ########## Auxiliary objects ##########
 class CallSessionManager:
@@ -733,7 +734,7 @@ class Node(IDObject):
         an OperatorNode that contains an identity function
         as the parent so the gradient is 1 (i.e. dF/dF = 1)"""
         if len(self._parents) == 0:
-            self._gvalue = jnp.array(1.)
+            self._gvalue = jacrev(lambda x: x, argnums=0)(self.value)
         else:
             self._gvalue = sum(self._gradients_from_parents[p]
                                for p in self._parents)
