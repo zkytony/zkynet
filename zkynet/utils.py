@@ -20,6 +20,8 @@ def backpropdot(t1, t2):
     # This is developed through trial and error;
     if len(t1.shape) <= 2 and len(t2.shape) <= 2:
         return jnp.dot(t1, t2)
+    elif 0 < len(t1.shape) <= 4 and 0 < len(t2.shape) <= 4:
+        return jnp.tensordot(t1, t2)
     else:
         # this seems to be the right call for tensor product
         # (though I am not sure why)
