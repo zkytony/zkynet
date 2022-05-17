@@ -38,7 +38,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../source/README.html">zkynet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../source/README.html">zkynet: Exploring deep learning basics through implementations</a></li>
 </ul>
 
         </div>
@@ -80,16 +80,16 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="zkynet.models.html">zkynet.models package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.autoencoder">zkynet.models.autoencoder module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.cnn">zkynet.models.cnn module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-autoencoder-module">zkynet.models.autoencoder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-cnn-module">zkynet.models.cnn module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.fcn">zkynet.models.fcn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.function">zkynet.models.function module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.gan">zkynet.models.gan module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.gnn">zkynet.models.gnn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.linear">zkynet.models.linear module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.rnn">zkynet.models.rnn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.spn">zkynet.models.spn module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models.transformer">zkynet.models.transformer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-function-module">zkynet.models.function module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-gan-module">zkynet.models.gan module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-gnn-module">zkynet.models.gnn module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-linear-module">zkynet.models.linear module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-rnn-module">zkynet.models.rnn module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-spn-module">zkynet.models.spn module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#zkynet-models-transformer-module">zkynet.models.transformer module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="zkynet.models.html#module-zkynet.models">Module contents</a></li>
 </ul>
 </li>
@@ -101,6 +101,14 @@
 </section>
 <section id="module-zkynet.utils">
 <span id="zkynet-utils-module"></span><h2>zkynet.utils module<a class="headerlink" href="#module-zkynet.utils" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="zkynet.utils.backpropdot">
+<span class="sig-prename descclassname"><span class="pre">zkynet.utils.</span></span><span class="sig-name descname"><span class="pre">backpropdot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/utils.html#backpropdot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.utils.backpropdot" title="Permalink to this definition"></a></dt>
+<dd><p>returns the product of two tensors t1 and t2
+that can deal with the case when t1 or t2 are
+vectors or matrices instead. Used in backprop.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="zkynet.utils.fullname">
 <span class="sig-prename descclassname"><span class="pre">zkynet.utils.</span></span><span class="sig-name descname"><span class="pre">fullname</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/utils.html#fullname"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.utils.fullname" title="Permalink to this definition"></a></dt>

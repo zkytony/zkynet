@@ -37,7 +37,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../source/README.html">zkynet: exploring deep learning basics.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../source/README.html">zkynet: Exploring deep learning basics through implementations</a></li>
 </ul>
 
         </div>
@@ -66,6 +66,7 @@
              
   <h1>Source code for zkynet.utils</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
 
 <div class="viewcode-block" id="unique_id"><a class="viewcode-back" href="../../api/zkynet.html#zkynet.utils.unique_id">[docs]</a><span class="k">def</span> <span class="nf">unique_id</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">6</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="n">length</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span></div>
@@ -77,6 +78,20 @@
     <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s1">&#39;builtins&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">klass</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="c1"># avoid outputs like &#39;builtins.str&#39;</span>
     <span class="k">return</span> <span class="n">module</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">klass</span><span class="o">.</span><span class="vm">__qualname__</span></div>
+
+
+<div class="viewcode-block" id="backpropdot"><a class="viewcode-back" href="../../api/zkynet.html#zkynet.utils.backpropdot">[docs]</a><span class="k">def</span> <span class="nf">backpropdot</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;returns the product of two tensors t1 and t2</span>
+<span class="sd">    that can deal with the case when t1 or t2 are</span>
+<span class="sd">    vectors or matrices instead. Used in backprop.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t1</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">t1</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">4</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># this seems to be the right call for tensor product</span>
+        <span class="c1"># (though I am not sure why)</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

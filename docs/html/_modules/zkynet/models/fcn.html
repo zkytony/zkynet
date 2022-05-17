@@ -37,7 +37,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet: exploring deep learning basics.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet: Exploring deep learning basics through implementations</a></li>
 </ul>
 
         </div>
@@ -65,153 +65,57 @@
            <div itemprop="articleBody">
              
   <h1>Source code for zkynet.models.fcn</h1><div class="highlight"><pre>
-<span></span><span class="c1"># A basic feedforward neural network with</span>
-<span class="c1"># tunable parameters, and the backprop</span>
-<span class="c1"># training algorithm</span>
-<span class="kn">from</span> <span class="nn">.function</span> <span class="kn">import</span> <span class="n">Function</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Linear layer</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">zkynet.framework</span> <span class="kn">import</span> <span class="n">cg</span><span class="p">,</span> <span class="n">op</span>
 
-<div class="viewcode-block" id="FCN"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.FCN">[docs]</a><span class="k">class</span> <span class="nc">FCN</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
+<div class="viewcode-block" id="Linear"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.Linear">[docs]</a><span class="k">class</span> <span class="nc">Linear</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    FCN: fully-connected networks, also called deep</span>
-<span class="sd">    feedforward neural networks, or multilayer perceptrons.</span>
+<span class="sd">    A linear layer maps a vector of dimension (n,1)</span>
+<span class="sd">    to a vector of dimension (p,1) by:</span>
 
-<span class="sd">    An FCN defines a mapping</span>
+<span class="sd">    :math:`f(x) = x^TW + b`</span>
 
-<span class="sd">        y = f(x;p)</span>
+<span class="sd">    where:</span>
 
-<span class="sd">    where x are the inputs, y are the outputs, and p are</span>
-<span class="sd">    the parameters. Specifically,</span>
+<span class="sd">        - :math:`x \in \mathbb{R}^{1\times n}`</span>
+<span class="sd">        - :math:`W \in \mathbb{R}^{n\times p}`</span>
+<span class="sd">        - :math:`b \in \mathbb{R}^{1\times p}`</span>
 
-<span class="sd">        y = fn (... (f3 (f2 (f1 (x) ) )</span>
-
-<span class="sd">    where each f(x) = g(Wx + b) is a non-linear function</span>
-<span class="sd">    that takes as input a linear transformation.</span>
+<span class="sd">    Here, we accept x in the form of a matrix X of shape (D,n),</span>
+<span class="sd">    so the linear mapping can be efficiently computed for</span>
+<span class="sd">    many data points.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layers</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_weights</span><span class="p">,</span> <span class="n">init_bias</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
-<span class="sd">            layers (list): A list of FCNLayer objects,</span>
-<span class="sd">                which represent layers in the FCN.</span>
-<span class="sd">                Note that the output of the i-1(th) layer</span>
-<span class="sd">                is the input to the i(th) layer.</span>
+<span class="sd">            init_weights (np.array): matrix of shape (n,p)</span>
+<span class="sd">            init_bias (np.array): vector of shape (p,)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_layers</span> <span class="o">=</span> <span class="n">layers</span>
+        <span class="c1"># Verify shape</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">init_weights</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">init_bias</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid shape; Weight matrix&quot;</span>
+                             <span class="s2">&quot;is {(n,p)} while bias is </span><span class="si">{init_bias.shape}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This is the forward pass of the network.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">inp</span> <span class="o">=</span> <span class="n">x</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_layers</span><span class="p">)):</span>
-            <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_layers</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">inp</span><span class="p">))</span>
-            <span class="n">inp</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_meta</span><span class="p">[</span><span class="s2">&quot;layer_outputs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outputs</span>
-        <span class="k">return</span> <span class="n">outputs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-
-<div class="viewcode-block" id="FCN.layer"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.FCN.layer">[docs]</a>    <span class="k">def</span> <span class="nf">layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a layer given index;</span>
-<span class="sd">        Note that the first layer (i=0) is closest</span>
-<span class="sd">        to the input, while the last layer is the farthest.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
-
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;FCN:</span><span class="se">\n</span><span class="s2">&quot;</span>
-        <span class="n">num_params</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_layers</span><span class="p">)):</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;** LAYER </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="n">num_params</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">num_params</span>
-        <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;TOTAL PARAMS: </span><span class="si">{</span><span class="n">num_params</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="k">return</span> <span class="n">result</span></div>
-
-<div class="viewcode-block" id="LinearLayer"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.LinearLayer">[docs]</a><span class="k">class</span> <span class="nc">LinearLayer</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A linear layer outputs y = x^T W + b</span>
-<span class="sd">    where x is (n,1), W is (n,m), and b is (m,1)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">bias</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            weights (np.array): a matrix (n,m)</span>
-<span class="sd">            bias (np.array): a vector (m,)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_bias</span> <span class="o">=</span> <span class="n">bias</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            x (np.array): input of shape (D, n); each</span>
-<span class="sd">                data point is an n-element vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bias</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">),),</span>
+                         <span class="n">params</span><span class="o">=</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="n">init_weights</span><span class="p">),</span>
+                                 <span class="n">cg</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">init_bias</span><span class="p">)))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span>
+    <span class="k">def</span> <span class="nf">input_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns :math:`n`, the input dimension&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bias</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">output_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;returns :math:`p`, the output dimension&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Linear(weights=</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="si">}</span><span class="s2">, bias=</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_bias</span><span class="si">}</span><span class="s2">)&quot;</span></div>
-
-
-<div class="viewcode-block" id="Identity"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.Identity">[docs]</a><span class="k">class</span> <span class="nc">Identity</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Identity function: just returns itself&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">x</span></div>
-
-
-<div class="viewcode-block" id="ReLU"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.ReLU">[docs]</a><span class="k">class</span> <span class="nc">ReLU</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;rectified linear unit g(x) = max{0,x}&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="FCNLayer"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.FCNLayer">[docs]</a><span class="k">class</span> <span class="nc">FCNLayer</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An FCN layer is a linear layer passed through</span>
-<span class="sd">    a non-linear function.</span>
-
-<span class="sd">    It outputs: y = g(L(x)) where L(x) is the linear layer</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_layer</span><span class="p">,</span> <span class="n">g_func</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            linear_layer (LinearLayer)</span>
-<span class="sd">            g_func (Function)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_linear_layer</span> <span class="o">=</span> <span class="n">linear_layer</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_g_func</span> <span class="o">=</span> <span class="n">g_func</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_g_func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_linear_layer</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-
-<div class="viewcode-block" id="FCNLayer.build"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.FCNLayer.build">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">g_func</span><span class="o">=</span><span class="n">ReLU</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;constructs a FCNLayer where the weights are of given `shape` with random</span>
-<span class="sd">        initial weights, between 0 and 1), unless `weights` is specified.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;weight matrix must be 2D.&quot;</span>
-        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">bias</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bias</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],)</span>
-        <span class="k">return</span> <span class="n">FCNLayer</span><span class="p">(</span><span class="n">LinearLayer</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">bias</span><span class="p">),</span> <span class="n">g_func</span><span class="p">())</span></div>
-
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;FCNLayer(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_linear_layer</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2">   g_func=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_g_func</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linear_layer</span><span class="o">.</span><span class="n">num_params</span></div>
+<div class="viewcode-block" id="Linear.call"><a class="viewcode-back" href="../../../api/zkynet.models.html#zkynet.models.fcn.Linear.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">y</span></div></div>
 </pre></div>
 
            </div>

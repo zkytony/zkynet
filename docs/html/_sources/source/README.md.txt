@@ -1,6 +1,104 @@
-# zkynet
+# zkynet: Exploring deep learning basics through implementations
 
-Exploring deep learning basics through implementations.
+An autodiff framework with a PyTorch-like API that supports tensor inputs and outputs.
+
+Key points to note:
+- all inputs to functions represented using our computational graph are
+  expected to be [JAX arrays](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.array.html).
+
+
+## Concepts
+
+The overall design principles of this framework is that:
+
+- A **function** is an _abstract template_ that maps ordered **inputs** (`Variable`)
+  to an output subject to some internal **parameters** (`Parameter`));
+
+  In order to define the function, the values of these parameters
+  would need to be tracked of inside the Function object. For example,
+  think of a neural network model. The model carries parameters. But
+  before we apply it to some real inputs, the model exists as a floating
+  blackbox; it isn't _grounded_ to any input values.
+
+- There are two kinds of functions, operators (`Operator`) and
+    modules (`module`).
+
+    An **operator** is a function that we intend to hard code its
+    derivatives.  Such functions output numbers or arrays.
+
+    A **module** is a function that is intended to be
+    user-defined, (maybe) complicated functions.  There is a _flat_
+    _grounded_ computational graph corresponding to a module,
+    created upon the module is called. This computational graph,
+    as explained next, consists of nodes that represent inputs
+    or operators (but not modules - that's why we say it's flat).
+
+
+- When concrete input values are provided for a function call, a
+  **computational graph** (a DAG) is created. We represent the
+  graph using nodes (`Node`). A **node** can always be
+  regarded as an instantiation of a particular Input to a
+  function. It carries a **value**.  Since it is a DAG, a node can
+  have multiple children and multiple parents.
+
+- We distinguish two node types: input node (`InputNode`) and
+    operator node (`OperatorNode`).
+
+    The **input node** is a leaf node. It literally represents a
+    leaf node on the DAG.
+
+    The **operator node** is not a leaf node.  Both
+    should be grounded with values.  The value of the operator
+    node represents the output of the function (specifically, an
+    Operator) under some input node instantiation.
+
+-  A **ModuleGraph** is a computational graph that
+    is grounded when a Module is called. It stores
+    a flat computational graph (by 'flat' we mean
+    that its internal OperatorNodes should only be
+    Operators.)
+
+    Note that since a Module's call may involve
+    calling another module, we don't actually
+    create a graph for that module. We only care
+    about the trigger function (i.e. the first Module),
+    similar to CallSessionManager.
+
+
+-   In order to enforce independence between computational
+    graphs from different calls, **CallSessionManager** will
+    maintain the **call ID** of the current call, which is assigned
+    to all nodes that are created during the call.
+
+    It will clear the call ID if the call to the trigger
+    function is finished (the trigger function is the first
+    function that is called, which is likely a user-defined
+    model).
+
+    Additionally, it stores InputNodes that have been
+    created (identified by its ID), so that subsequent
+    calls to the 'to_node' method of Input do not create
+    new ones (which may have wrong parent/children relationships)
+    but reuse the ones stored here.
+
+- Each Function or Input has a name and a functional name.
+
+
+  **Functional name:** The name that identifies the ROLE this template
+  object plays in the definition of a function; For example,
+  if self is an Input, then this is the name that identifies
+  both the function and the role this input plays to that function.
+
+
+  **Name:** The string that identifies the VARAIBLE name (or ENTITY)
+  that this template object represents. For example,
+  we could have two Function objects that represent
+  the same function but we care about their outputs
+  as separate variables. Then, these two Function objects
+  should have the same 'functional_name' but different
+  'name'.
+
+
 
 ## Examples
 
@@ -80,7 +178,7 @@ Exploring deep learning basics through implementations.
    # array([ 36,  80, 150])
    ```
 
-3. Backprop & gradients:
+3. Backprop (autodiff) & gradients:
 
     ```python
     result = m(3)
@@ -90,6 +188,29 @@ Exploring deep learning basics through implementations.
     result.grad(m.input("x"))  # obtain dm/dx
     # 33
     ```
+
+    Note that backpropagation works with vector, matrix, or tensor inputs.
+    For example:
+    ```python
+    # vector input
+    x = jnp.array([3., 4., 5.])
+    result = m(x)
+    result.back()
+    result.grad(m.input("x"))
+    # Out[7]:
+    # DeviceArray([[33.,  0.,  0.],
+    #              [ 0., 56.,  0.],
+    #              [ 0.,  0., 85.]], dtype=float32)
+
+    result.grad(m.param("w"))
+    # DeviceArray([[ 9.],
+    #              [16.],
+    #              [25.]], dtype=float32)
+    ```
+    See [`test_cg_backward.py`](./tests/test_cg_backward.py) for examples
+    of matrix and tensor inputs.
+
+
 
 ### Composite models and visualization
 You can visualize a computational graph as
@@ -211,38 +332,60 @@ This generates:
 
 
 ### Writing an Operator
-Below shows an example of implementing a multiplication
-operator, called `Multiply`.
+The interface is simple when implementing an operator (of class `Operator`). You only
+need to implement the forward-pass in `_op_impl` (JAX takes care of the Jacobian
+using `jacrev`; we only use `jacrev` at the operator-level, and
+implement _our own_ automatic differentiation algorithm for module-level differentiation.)
+Below are examples for `Add`, `Multiply`, `Square`, and `Dot`.
 
 ```python
-from zkynet.framework import cg
-
-class Multiply(cg.Operator):
+class Add(Operator):
     def __init__(self):
-        super().__init__(inputs=(cg.Variable("a"), cg.Variable("b")))
+        super().__init__(inputs=(Variable("a"), Variable("b")))
 
-    def call(self, a, b):
-        return a.value * b.value
+    def _op_impl(self, a, b):
+        return a + b
 
-    def _gradfn(self, inpt):
-        def _a_grad(a, b):
-            return b.value
-        def _b_grad(a, b):
-            return a.value
-        if inpt.short_name == "a":
-            return _a_grad
-        elif inpt.short_name == "b":
-            return _b_grad
-        else:
-            raise ValueError(
-                f"Unknown input for {self.functional_name}: {inpt.short_name}")
+
+class Multiply(Operator):
+    def __init__(self):
+        super().__init__(inputs=(Variable("a"), Variable("b")))
+
+    def _op_impl(self, a, b):
+        return a * b  # element wise multiplication
+
+
+class Square(Operator):
+    def __init__(self):
+        super().__init__(inputs=(Variable("x"),))
+
+    def _op_impl(self, x):
+        return jnp.square(x)
+
+
+class Dot(Operator):
+    def __init__(self):
+        super().__init__(inputs=(Variable("a"), Variable("b")))
+
+    def _op_impl(self, a, b):
+        return jnp.dot(a, b)
 ```
+Note that every time when using an operator to compose a function,
+you need to create a new object for it. For convenience, you
+could define utility functions like:
+```python
+def add(a, b):
+    return Add()(a, b)
 
-Note that the two methods to override are `call` (forward) and
-`_gradfn` (backward).  The function `call` can return either a number
-or array or an OperatorNode. The function `_gradfn` should return _a
-function_ that represents the gradient function, which takes in the
-same inputs as the operator.
+def mult(a, b):
+    return Multiply()(a, b)
+
+def square(x):
+    return Square()(x)
+
+def dot(a, b):
+    return Dot()(a, b)
+```
 
 
 ## Installation
@@ -276,15 +419,26 @@ This will download several kaggle datasets.
 
 ## Progress tracker
 
- - [X] Implement basic feed-forward network
- - [ ] Be able to train the network using gradient descent
-   - [-] Implement a framework for automatic differentiation
-        - [X] computational graph forward construction (05/06/2022)
-        - [X] backward gradient accumulation (05/09/2022)
-        - [ ] log space
-        - [ ] vectorization tests
+   1. Build a framework for automatic differentiation
+      - Design with a PyTorch-like API
+      - Able to do forward pass
+      - Able to do backward pass (backprop) for scalar input/output
+      - Extension to vector, matrix, tensor input/output (using JAX)
 
- - [ ] Implement convolutional neural network
- - [ ] Implement recurrent neural network
- - [ ] Implement auto-encoder
- - [ ] Implement transformer
+
+## Troubleshooting JAX
+If you experience the following error messages when performing a seemingly simple
+operation such as `jnp.dot`,
+```
+2022-05-14 00:05:33.943054: E external/org_tensorflow/tensorflow/stream_executor/cuda/cuda_blas.cc:232] failed to create cublas handle: CUBLAS_STATUS_NOT_INITIALIZED
+2022-05-14 00:05:33.943074: E external/org_tensorflow/tensorflow/stream_executor/cuda/cuda_blas.cc:234] Failure to initialize cublas may be due to OOM (cublas needs some free memory when you
+ initialize it, and your deep-learning framework may have preallocated more than its fair share), or may be because this binary was not built with support for the GPU in your machine.
+2022-05-14 00:05:33.943104: F external/org_tensorflow/tensorflow/compiler/xla/service/gpu/gemm_algorithm_picker.cc:324] Check failed: stream->parent()->GetBlasGemmAlgorithms(&algorithms)
+Aborted (core dumped)
+```
+Then, according to [this github thread](https://github.com/google/jax/issues/7118),
+there maybe something funky with your CUDA / JAX version stuff. And you should run
+```
+export XLA_PYTHON_CLIENT_PREALLOCATE=false
+```
+although I am not sure if with that GPU still gets used? **YES. I CAN CONFIRM THAT IT IS USED; The memory is dynamically allocated.**

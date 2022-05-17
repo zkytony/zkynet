@@ -37,7 +37,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/README.html">zkynet: Exploring deep learning basics through implementations</a></li>
 </ul>
 
         </div>
@@ -74,7 +74,9 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jacrev</span><span class="p">,</span> <span class="n">vjp</span><span class="p">,</span> <span class="n">vmap</span>
+
 
 <span class="c1">########## Auxiliary objects ##########</span>
 <div class="viewcode-block" id="CallSessionManager"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.CallSessionManager">[docs]</a><span class="k">class</span> <span class="nc">CallSessionManager</span><span class="p">:</span>
@@ -188,10 +190,10 @@
             <span class="sa">f</span><span class="s2">&quot;all objects in &#39;inputs&#39; must be of type Variable&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">=</span> <span class="n">inputs</span>  <span class="c1"># will maintain the order</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># maps from input short name to input</span>
-        <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># maps from input short name to input index</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">inp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">):</span>
             <span class="n">inp</span><span class="o">.</span><span class="n">fun</span> <span class="o">=</span> <span class="bp">self</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">short_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">short_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
 
         <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -239,6 +241,11 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span></div>
 
 <div class="viewcode-block" id="Function.input"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.input">[docs]</a>    <span class="k">def</span> <span class="nf">input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">short_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> is not an input.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_index</span><span class="p">(</span><span class="n">short_name</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="Function.input_index"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Function.input_index">[docs]</a>    <span class="k">def</span> <span class="nf">input_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_name</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">short_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> is not an input.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs_dict</span><span class="p">[</span><span class="n">short_name</span><span class="p">]</span></div>
@@ -325,7 +332,15 @@
 <span class="sd">                 back a ModuleGraph when you call a Module.)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># The implementation is specific to Operator and Module. See below.</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="k">def</span> <span class="nf">_verify_jax_array_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Ensure that we are only dealing with</span>
+<span class="sd">        jax array&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">input_val</span> <span class="ow">in</span> <span class="n">input_vals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_val</span><span class="p">,</span> <span class="n">Node</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_val</span><span class="p">,</span> <span class="n">Input</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_val</span><span class="p">,</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Values to inputs must be JAX arrays&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Operator"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator">[docs]</a><span class="k">class</span> <span class="nc">Operator</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
@@ -341,11 +356,12 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="Operator.__call__"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator.__call__">[docs]</a>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals</span><span class="p">):</span>
         <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_jax_array_type</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
         <span class="n">input_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_input_nodes</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
         <span class="n">output_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">input_nodes</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_val</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The output of Operator&#39;s &#39;call&#39; function must NOT be a Node&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The output of Operator&#39;s &#39;call&#39; function must NOT be a Node;&quot;</span>
+                             <span class="s2">&quot;Must be a jax.ndarray.&quot;</span><span class="p">)</span>
         <span class="n">output_node</span> <span class="o">=</span> <span class="n">OperatorNode</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span>
                                    <span class="n">output_val</span><span class="p">,</span> <span class="n">input_nodes</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_nodes</span><span class="p">)):</span>
@@ -353,6 +369,37 @@
 
         <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output_node</span></div>
+
+<div class="viewcode-block" id="Operator.call"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_nodes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;We will use JAX to implement the operator&#39;s logic. As a result,</span>
+<span class="sd">        an Operator will have a _call function that takes in jax arrays</span>
+<span class="sd">        as inputs (each is the value of the corresponding input node).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_op_impl</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">input_nodes</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_op_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals_ndarrays</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Operator._gradfn"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator._gradfn">[docs]</a>    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the &#39;call_fun&#39; used when building a Module,</span>
+<span class="sd">        that represents the gradient of this operator with</span>
+<span class="sd">        respect to input.  Using JAX.</span>
+<span class="sd">        TO BE OVERRIDDEN.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            inpt (Input): the gradient taken with respect for.</span>
+<span class="sd">            *input_vals (list-like): the values to input when</span>
+<span class="sd">                calling the gradient function.  Recall that</span>
+<span class="sd">                df(a,b)/da could be written as df/da(a,b).</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            a function that takes in *self.inputs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_grad_call</span><span class="p">(</span><span class="o">*</span><span class="n">input_nodes</span><span class="p">):</span>
+            <span class="c1"># This matches the signature of &#39;call&#39; in Function</span>
+            <span class="n">inpt_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_index</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">jacrev</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_op_impl</span><span class="p">,</span> <span class="n">argnums</span><span class="o">=</span><span class="n">inpt_i</span><span class="p">)(</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">input_nodes</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">_grad_call</span></div>
 
 <div class="viewcode-block" id="Operator.gradfn"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator.gradfn">[docs]</a>    <span class="k">def</span> <span class="nf">gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -375,20 +422,10 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">_gradfn</span><span class="p">(</span><span class="n">inpt</span><span class="p">),</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">inputs_nofun</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Operator._gradfn"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Operator._gradfn">[docs]</a>    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the &#39;call_fun&#39; used when building a Module;</span>
-<span class="sd">        TO BE OVERRIDDEN.</span>
+<div class="viewcode-block" id="Operator.make_vjp"><a class="viewcode-back" href="../../../api/zkynet.framework.html#zkynet.framework.computation_graph.Operator.make_vjp">[docs]</a>    <span class="k">def</span> <span class="nf">make_vjp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals_ndarrays</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">vjp_fun</span> <span class="o">=</span> <span class="n">vjp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_op_impl</span><span class="p">,</span> <span class="o">*</span><span class="n">input_vals_ndarrays</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vjp_fun</span></div></div>
 
-<span class="sd">        Args:</span>
-<span class="sd">            inpt (Input): the gradient taken with respect for.</span>
-<span class="sd">            *input_vals (list-like): the values to input when</span>
-<span class="sd">                calling the gradient function.  Recall that</span>
-<span class="sd">                df(a,b)/da could be written as df/da(a,b).</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            a function that takes in *self.inputs</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
 
 
 <div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">(</span><span class="n">Function</span><span class="p">):</span>
@@ -411,7 +448,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            call_fun (function): function to be called. This</span>
 <span class="sd">                supports dynamic construction of a new module</span>
-<span class="sd">                with a custom call function.</span>
+<span class="sd">                with a custom call function. This function has</span>
+<span class="sd">                the same definition as the &#39;call&#39; in Function.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">functional_name</span><span class="o">=</span><span class="n">functional_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_call_fun</span> <span class="o">=</span> <span class="n">call_fun</span></div>
@@ -429,7 +467,7 @@
 <span class="sd">        return a OperatorNode.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_jax_array_type</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
         <span class="n">input_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_input_nodes</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
         <span class="n">output_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">input_nodes</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_val</span><span class="p">,</span> <span class="n">Node</span><span class="p">)</span>\
@@ -442,7 +480,7 @@
             <span class="k">if</span> <span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">trigger_function</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
                 <span class="c1"># this is the trigger function;</span>
                 <span class="n">output</span> <span class="o">=</span> <span class="n">ModuleGraph</span><span class="p">(</span><span class="n">_GLOBAL_CALL_MANAGER</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span>
-                                   <span class="bp">self</span><span class="p">,</span> <span class="n">output_val</span><span class="p">)</span>
+                                     <span class="bp">self</span><span class="p">,</span> <span class="n">output_val</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># so we just return output_val (OperatorNode)</span>
                 <span class="n">output</span> <span class="o">=</span> <span class="n">output_val</span>
@@ -792,7 +830,7 @@
 <span class="sd">        an OperatorNode that contains an identity function</span>
 <span class="sd">        as the parent so the gradient is 1 (i.e. dF/dF = 1)&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_gvalue</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gvalue</span> <span class="o">=</span> <span class="n">jacrev</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">argnums</span><span class="o">=</span><span class="mi">0</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_gvalue</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gradients_from_parents</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
                                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parents</span><span class="p">)</span></div>
@@ -892,7 +930,38 @@
         <span class="c1"># compute its gradient value. Note that we want independence</span>
         <span class="c1"># between the forward graph and this gradient operator graph.</span>
         <span class="n">input_vals</span> <span class="o">=</span> <span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">gradfn</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span><span class="o">.</span><span class="n">value</span></div></div>
+        <span class="k">return</span> <span class="n">gradfn</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span><span class="o">.</span><span class="n">value</span></div>
+
+<div class="viewcode-block" id="OperatorNode.vjp"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.OperatorNode.vjp">[docs]</a>    <span class="k">def</span> <span class="nf">vjp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The Vector Jacobian Product. This is roughtly computing</span>
+<span class="sd">        the chain rule from the function&#39;s output up to the child:</span>
+
+<span class="sd">        dF/dp * dp/dc.</span>
+
+<span class="sd">        Here, p = self, c = child, and F = Module. The dp/dc is the</span>
+<span class="sd">        Jacobian matrix (in practice a tensor) specific to the underlying</span>
+<span class="sd">        operator.  while dF/dp is the &quot;vector&quot; (which in practice can be a</span>
+<span class="sd">        tensor), stored in self.gvalue.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">input_vals</span> <span class="o">=</span> <span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span>
+        <span class="n">vjp_fun</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">make_vjp</span><span class="p">(</span><span class="o">*</span><span class="n">input_vals</span><span class="p">)</span>
+        <span class="c1"># By default, vjp takes in a vector only. We do vmap multiple times</span>
+        <span class="c1"># over vjp_fun to get a function that can take in self.gvalue, a</span>
+        <span class="c1"># tensor.  Each application of vmap increases one tensor dimension</span>
+        <span class="c1"># the resulting function can handle.  We know that vjp works for 1D</span>
+        <span class="c1"># tensor, vmap(vjp) works for 2D, vmap(vmap(vjp)) works for 3D,</span>
+        <span class="c1"># etc.</span>
+        <span class="n">tensor_vjp_fun</span> <span class="o">=</span> <span class="n">vjp_fun</span>
+        <span class="c1"># Number of tensor dimensions we shall vectorize the vjp function over;</span>
+        <span class="c1"># It is the difference between the dimension vjp can handle (which is</span>
+        <span class="c1"># based on the dimension of the output tensor of this operator, stored</span>
+        <span class="c1"># in self.value) and the desired dimension we need (which is based on</span>
+        <span class="c1"># self.gvalue, which can be seen as df/dp)</span>
+        <span class="n">vec_tensor_dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gvalue</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">vec_tensor_dims</span><span class="p">):</span>
+            <span class="n">tensor_vjp_fun</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">tensor_vjp_fun</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_vjp_fun</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gvalue</span><span class="p">)[</span><span class="n">child</span><span class="o">.</span><span class="n">parent_input_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span></div></div>
 
 
 <div class="viewcode-block" id="ModuleGraph"><a class="viewcode-back" href="../../../computation_graph.html#zkynet.framework.computation_graph.ModuleGraph">[docs]</a><span class="k">class</span> <span class="nc">ModuleGraph</span><span class="p">:</span>
@@ -980,8 +1049,8 @@
                 <span class="n">sender</span> <span class="o">=</span> <span class="n">_senders</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">OperatorNode</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">sender</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-                    <span class="n">dpdc</span> <span class="o">=</span> <span class="n">sender</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
-                    <span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">sender</span><span class="o">.</span><span class="n">gvalue</span> <span class="o">*</span> <span class="n">dpdc</span><span class="p">)</span>
+                    <span class="n">vjp</span> <span class="o">=</span> <span class="n">sender</span><span class="o">.</span><span class="n">vjp</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                    <span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">vjp</span><span class="p">)</span>
                     <span class="n">_receivers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
             <span class="c1"># conversion from receiver to sender</span>
             <span class="n">_still_receivers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>

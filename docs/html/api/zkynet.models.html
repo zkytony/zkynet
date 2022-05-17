@@ -16,6 +16,7 @@
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -38,7 +39,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../source/README.html">zkynet: exploring deep learning basics.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../source/README.html">zkynet: Exploring deep learning basics through implementations</a></li>
 </ul>
 
         </div>
@@ -70,127 +71,85 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.autoencoder">
-<span id="zkynet-models-autoencoder-module"></span><h2>zkynet.models.autoencoder module<a class="headerlink" href="#module-zkynet.models.autoencoder" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-autoencoder-module">
+<h2>zkynet.models.autoencoder module<a class="headerlink" href="#zkynet-models-autoencoder-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.cnn">
-<span id="zkynet-models-cnn-module"></span><h2>zkynet.models.cnn module<a class="headerlink" href="#module-zkynet.models.cnn" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-cnn-module">
+<h2>zkynet.models.cnn module<a class="headerlink" href="#zkynet-models-cnn-module" title="Permalink to this headline"></a></h2>
 </section>
 <section id="module-zkynet.models.fcn">
 <span id="zkynet-models-fcn-module"></span><h2>zkynet.models.fcn module<a class="headerlink" href="#module-zkynet.models.fcn" title="Permalink to this headline"></a></h2>
+<p>Linear layer</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="zkynet.models.fcn.FCN">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.fcn.</span></span><span class="sig-name descname"><span class="pre">FCN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#FCN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.FCN" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#zkynet.models.function.Function" title="zkynet.models.function.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.models.function.Function</span></code></a></p>
-<p>FCN: fully-connected networks, also called deep
-feedforward neural networks, or multilayer perceptrons.</p>
-<p>An FCN defines a mapping</p>
+<dt class="sig sig-object py" id="zkynet.models.fcn.Linear">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.fcn.</span></span><span class="sig-name descname"><span class="pre">Linear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_bias</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#Linear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.Linear" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../computation_graph.html#zkynet.framework.computation_graph.Module" title="zkynet.framework.computation_graph.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.framework.computation_graph.Module</span></code></a></p>
+<p>A linear layer maps a vector of dimension (n,1)
+to a vector of dimension (p,1) by:</p>
+<p><span class="math notranslate nohighlight">\(f(x) = x^TW + b\)</span></p>
+<p>where:</p>
 <blockquote>
-<div><p>y = f(x;p)</p>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(x \in \mathbb{R}^{1    imes n}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(W \in \mathbb{R}^{n    imes p}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(b \in \mathbb{R}^{1    imes p}\)</span></p></li>
+</ul>
 </div></blockquote>
-<p>where x are the inputs, y are the outputs, and p are
-the parameters. Specifically,</p>
-<blockquote>
-<div><p>y = fn (… (f3 (f2 (f1 (x) ) )</p>
-</div></blockquote>
-<p>where each f(x) = g(Wx + b) is a non-linear function
-that takes as input a linear transformation.</p>
+<p>Here, we accept x in the form of a matrix X of shape (D,n),
+so the linear mapping can be efficiently computed for
+many data points.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="zkynet.models.fcn.FCN.layer">
-<span class="sig-name descname"><span class="pre">layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#FCN.layer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.FCN.layer" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a layer given index;
-Note that the first layer (i=0) is closest
-to the input, while the last layer is the farthest.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="zkynet.models.fcn.FCNLayer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.fcn.</span></span><span class="sig-name descname"><span class="pre">FCNLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">linear_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#FCNLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.FCNLayer" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#zkynet.models.function.Function" title="zkynet.models.function.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.models.function.Function</span></code></a></p>
-<p>An FCN layer is a linear layer passed through
-a non-linear function.</p>
-<p>It outputs: y = g(L(x)) where L(x) is the linear layer</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="zkynet.models.fcn.FCNLayer.build">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_func=&lt;class</span> <span class="pre">'zkynet.models.fcn.ReLU'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#FCNLayer.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.FCNLayer.build" title="Permalink to this definition"></a></dt>
-<dd><p>constructs a FCNLayer where the weights are of given <cite>shape</cite> with random
-initial weights, between 0 and 1), unless <cite>weights</cite> is specified.</p>
+<dt class="sig sig-object py" id="zkynet.models.fcn.Linear.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#Linear.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.Linear.call" title="Permalink to this definition"></a></dt>
+<dd><p>Function to be overriden</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*input_nodes</strong> (<a class="reference internal" href="../computation_graph.html#zkynet.framework.computation_graph.Node" title="zkynet.framework.computation_graph.Node"><em>Node</em></a>) – nodes with values
+that are inputs to this function
+on the computation graph.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Output:</dt><dd><p>a OperatorNode, a number or array-like.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="zkynet.models.fcn.FCNLayer.num_params">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_params</span></span><a class="headerlink" href="#zkynet.models.fcn.FCNLayer.num_params" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
+<dt class="sig sig-object py" id="zkynet.models.fcn.Linear.input_dim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_dim</span></span><a class="headerlink" href="#zkynet.models.fcn.Linear.input_dim" title="Permalink to this definition"></a></dt>
+<dd><p>returns <span class="math notranslate nohighlight">\(n\)</span>, the input dimension</p>
 </dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="zkynet.models.fcn.Identity">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.fcn.</span></span><span class="sig-name descname"><span class="pre">Identity</span></span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#Identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.Identity" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#zkynet.models.function.Function" title="zkynet.models.function.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.models.function.Function</span></code></a></p>
-<p>Identity function: just returns itself</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="zkynet.models.fcn.LinearLayer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.fcn.</span></span><span class="sig-name descname"><span class="pre">LinearLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#LinearLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.LinearLayer" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#zkynet.models.function.Function" title="zkynet.models.function.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.models.function.Function</span></code></a></p>
-<p>A linear layer outputs y = x^T W + b
-where x is (n,1), W is (n,m), and b is (m,1)</p>
-<dl class="py property">
-<dt class="sig sig-object py" id="zkynet.models.fcn.LinearLayer.num_params">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_params</span></span><a class="headerlink" href="#zkynet.models.fcn.LinearLayer.num_params" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="zkynet.models.fcn.LinearLayer.weights">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#zkynet.models.fcn.LinearLayer.weights" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="zkynet.models.fcn.Linear.output_dim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_dim</span></span><a class="headerlink" href="#zkynet.models.fcn.Linear.output_dim" title="Permalink to this definition"></a></dt>
+<dd><p>returns <span class="math notranslate nohighlight">\(p\)</span>, the output dimension</p>
+</dd></dl>
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="zkynet.models.fcn.ReLU">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.fcn.</span></span><span class="sig-name descname"><span class="pre">ReLU</span></span><a class="reference internal" href="../_modules/zkynet/models/fcn.html#ReLU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.fcn.ReLU" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#zkynet.models.function.Function" title="zkynet.models.function.Function"><code class="xref py py-class docutils literal notranslate"><span class="pre">zkynet.models.function.Function</span></code></a></p>
-<p>rectified linear unit g(x) = max{0,x}</p>
-</dd></dl>
-
 </section>
-<section id="module-zkynet.models.function">
-<span id="zkynet-models-function-module"></span><h2>zkynet.models.function module<a class="headerlink" href="#module-zkynet.models.function" title="Permalink to this headline"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="zkynet.models.function.Function">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">zkynet.models.function.</span></span><span class="sig-name descname"><span class="pre">Function</span></span><a class="reference internal" href="../_modules/zkynet/models/function.html#Function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.models.function.Function" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A function maps inputs to outputs (the forward pass);
-The function also stores its own gradient functions,
-for each input.</p>
-<p>When the function is called for a forward pass, it
-also accumulates gradient of the output with respect
-to every input - that gradient is also a function.</p>
-</dd></dl>
-
+<section id="zkynet-models-function-module">
+<h2>zkynet.models.function module<a class="headerlink" href="#zkynet-models-function-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.gan">
-<span id="zkynet-models-gan-module"></span><h2>zkynet.models.gan module<a class="headerlink" href="#module-zkynet.models.gan" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-gan-module">
+<h2>zkynet.models.gan module<a class="headerlink" href="#zkynet-models-gan-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.gnn">
-<span id="zkynet-models-gnn-module"></span><h2>zkynet.models.gnn module<a class="headerlink" href="#module-zkynet.models.gnn" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-gnn-module">
+<h2>zkynet.models.gnn module<a class="headerlink" href="#zkynet-models-gnn-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.linear">
-<span id="zkynet-models-linear-module"></span><h2>zkynet.models.linear module<a class="headerlink" href="#module-zkynet.models.linear" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-linear-module">
+<h2>zkynet.models.linear module<a class="headerlink" href="#zkynet-models-linear-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.rnn">
-<span id="zkynet-models-rnn-module"></span><h2>zkynet.models.rnn module<a class="headerlink" href="#module-zkynet.models.rnn" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-rnn-module">
+<h2>zkynet.models.rnn module<a class="headerlink" href="#zkynet-models-rnn-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.spn">
-<span id="zkynet-models-spn-module"></span><h2>zkynet.models.spn module<a class="headerlink" href="#module-zkynet.models.spn" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-spn-module">
+<h2>zkynet.models.spn module<a class="headerlink" href="#zkynet-models-spn-module" title="Permalink to this headline"></a></h2>
 </section>
-<section id="module-zkynet.models.transformer">
-<span id="zkynet-models-transformer-module"></span><h2>zkynet.models.transformer module<a class="headerlink" href="#module-zkynet.models.transformer" title="Permalink to this headline"></a></h2>
+<section id="zkynet-models-transformer-module">
+<h2>zkynet.models.transformer module<a class="headerlink" href="#zkynet-models-transformer-module" title="Permalink to this headline"></a></h2>
 </section>
 <section id="module-zkynet.models">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-zkynet.models" title="Permalink to this headline"></a></h2>

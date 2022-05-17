@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>zkynet &mdash; zkynet  documentation</title>
+  <title>zkynet: Exploring deep learning basics through implementations &mdash; zkynet  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
@@ -39,7 +39,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">zkynet</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">zkynet: Exploring deep learning basics through implementations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#concepts">Concepts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#proof-of-concept-model">Proof-of-concept model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#composite-models-and-visualization">Composite models and visualization</a></li>
@@ -52,6 +53,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#progress-tracker">Progress tracker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting-jax">Troubleshooting JAX</a></li>
 </ul>
 </li>
 </ul>
@@ -70,7 +72,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>zkynet</li>
+      <li>zkynet: Exploring deep learning basics through implementations</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/source/README.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -80,9 +82,92 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="zkynet">
-<h1>zkynet<a class="headerlink" href="#zkynet" title="Permalink to this headline"></a></h1>
-<p>Exploring deep learning basics through implementations.</p>
+  <section id="zkynet-exploring-deep-learning-basics-through-implementations">
+<h1>zkynet: Exploring deep learning basics through implementations<a class="headerlink" href="#zkynet-exploring-deep-learning-basics-through-implementations" title="Permalink to this headline"></a></h1>
+<p>An autodiff framework with a PyTorch-like API that supports tensor inputs and outputs.</p>
+<p>Key points to note:</p>
+<ul class="simple">
+<li><p>all inputs to functions represented using our computational graph are
+expected to be <a class="reference external" href="https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.array.html">JAX arrays</a>.</p></li>
+</ul>
+<section id="concepts">
+<h2>Concepts<a class="headerlink" href="#concepts" title="Permalink to this headline"></a></h2>
+<p>The overall design principles of this framework is that:</p>
+<ul>
+<li><p>A <strong>function</strong> is an <em>abstract template</em> that maps ordered <strong>inputs</strong> (<code class="docutils literal notranslate"><span class="pre">Variable</span></code>)
+to an output subject to some internal <strong>parameters</strong> (<code class="docutils literal notranslate"><span class="pre">Parameter</span></code>));</p>
+<p>In order to define the function, the values of these parameters
+would need to be tracked of inside the Function object. For example,
+think of a neural network model. The model carries parameters. But
+before we apply it to some real inputs, the model exists as a floating
+blackbox; it isn’t <em>grounded</em> to any input values.</p>
+</li>
+<li><p>There are two kinds of functions, operators (<code class="docutils literal notranslate"><span class="pre">Operator</span></code>) and
+modules (<code class="docutils literal notranslate"><span class="pre">module</span></code>).</p>
+<p>An <strong>operator</strong> is a function that we intend to hard code its
+derivatives.  Such functions output numbers or arrays.</p>
+<p>A <strong>module</strong> is a function that is intended to be
+user-defined, (maybe) complicated functions.  There is a <em>flat</em>
+<em>grounded</em> computational graph corresponding to a module,
+created upon the module is called. This computational graph,
+as explained next, consists of nodes that represent inputs
+or operators (but not modules - that’s why we say it’s flat).</p>
+</li>
+<li><p>When concrete input values are provided for a function call, a
+<strong>computational graph</strong> (a DAG) is created. We represent the
+graph using nodes (<code class="docutils literal notranslate"><span class="pre">Node</span></code>). A <strong>node</strong> can always be
+regarded as an instantiation of a particular Input to a
+function. It carries a <strong>value</strong>.  Since it is a DAG, a node can
+have multiple children and multiple parents.</p></li>
+<li><p>We distinguish two node types: input node (<code class="docutils literal notranslate"><span class="pre">InputNode</span></code>) and
+operator node (<code class="docutils literal notranslate"><span class="pre">OperatorNode</span></code>).</p>
+<p>The <strong>input node</strong> is a leaf node. It literally represents a
+leaf node on the DAG.</p>
+<p>The <strong>operator node</strong> is not a leaf node.  Both
+should be grounded with values.  The value of the operator
+node represents the output of the function (specifically, an
+Operator) under some input node instantiation.</p>
+</li>
+<li><p>A <strong>ModuleGraph</strong> is a computational graph that
+is grounded when a Module is called. It stores
+a flat computational graph (by ‘flat’ we mean
+that its internal OperatorNodes should only be
+Operators.)</p>
+<p>Note that since a Module’s call may involve
+calling another module, we don’t actually
+create a graph for that module. We only care
+about the trigger function (i.e. the first Module),
+similar to CallSessionManager.</p>
+</li>
+<li><p>In order to enforce independence between computational
+graphs from different calls, <strong>CallSessionManager</strong> will
+maintain the <strong>call ID</strong> of the current call, which is assigned
+to all nodes that are created during the call.</p>
+<p>It will clear the call ID if the call to the trigger
+function is finished (the trigger function is the first
+function that is called, which is likely a user-defined
+model).</p>
+<p>Additionally, it stores InputNodes that have been
+created (identified by its ID), so that subsequent
+calls to the ‘to_node’ method of Input do not create
+new ones (which may have wrong parent/children relationships)
+but reuse the ones stored here.</p>
+</li>
+<li><p>Each Function or Input has a name and a functional name.</p>
+<p><strong>Functional name:</strong> The name that identifies the ROLE this template
+object plays in the definition of a function; For example,
+if self is an Input, then this is the name that identifies
+both the function and the role this input plays to that function.</p>
+<p><strong>Name:</strong> The string that identifies the VARAIBLE name (or ENTITY)
+that this template object represents. For example,
+we could have two Function objects that represent
+the same function but we care about their outputs
+as separate variables. Then, these two Function objects
+should have the same ‘functional_name’ but different
+‘name’.</p>
+</li>
+</ul>
+</section>
 <section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline"></a></h2>
 <section id="proof-of-concept-model">
@@ -156,7 +241,7 @@ with concrete, given values.</p>
 </pre></div>
 </div>
 </li>
-<li><p>Backprop &amp; gradients:</p>
+<li><p>Backprop (autodiff) &amp; gradients:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">result</span><span class="o">.</span><span class="n">back</span><span class="p">()</span>  <span class="c1"># backprop; accumulate gradients</span>
 <span class="n">result</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">))</span>  <span class="c1"># obtain dm/dw</span>
@@ -165,6 +250,26 @@ with concrete, given values.</p>
 <span class="c1"># 33</span>
 </pre></div>
 </div>
+<p>Note that backpropagation works with vector, matrix, or tensor inputs.
+For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># vector input</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">])</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">result</span><span class="o">.</span><span class="n">back</span><span class="p">()</span>
+<span class="n">result</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">))</span>
+<span class="c1"># Out[7]:</span>
+<span class="c1"># DeviceArray([[33.,  0.,  0.],</span>
+<span class="c1">#              [ 0., 56.,  0.],</span>
+<span class="c1">#              [ 0.,  0., 85.]], dtype=float32)</span>
+
+<span class="n">result</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">))</span>
+<span class="c1"># DeviceArray([[ 9.],</span>
+<span class="c1">#              [16.],</span>
+<span class="c1">#              [25.]], dtype=float32)</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="./tests/test_cg_backward.py"><code class="docutils literal notranslate"><span class="pre">test_cg_backward.py</span></code></a> for examples
+of matrix and tensor inputs.</p>
 </li>
 </ol>
 </section>
@@ -272,36 +377,59 @@ There are four cases in total:</p>
 </section>
 <section id="writing-an-operator">
 <h3>Writing an Operator<a class="headerlink" href="#writing-an-operator" title="Permalink to this headline"></a></h3>
-<p>Below shows an example of implementing a multiplication
-operator, called <code class="docutils literal notranslate"><span class="pre">Multiply</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">zkynet.framework</span> <span class="kn">import</span> <span class="n">cg</span>
-
-<span class="k">class</span> <span class="nc">Multiply</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Operator</span><span class="p">):</span>
+<p>The interface is simple when implementing an operator (of class <code class="docutils literal notranslate"><span class="pre">Operator</span></code>). You only
+need to implement the forward-pass in <code class="docutils literal notranslate"><span class="pre">_op_impl</span></code> (JAX takes care of the Jacobian
+using <code class="docutils literal notranslate"><span class="pre">jacrev</span></code>; we only use <code class="docutils literal notranslate"><span class="pre">jacrev</span></code> at the operator-level, and
+implement <em>our own</em> automatic differentiation algorithm for module-level differentiation.)
+Below are examples for <code class="docutils literal notranslate"><span class="pre">Add</span></code>, <code class="docutils literal notranslate"><span class="pre">Multiply</span></code>, <code class="docutils literal notranslate"><span class="pre">Square</span></code>, and <code class="docutils literal notranslate"><span class="pre">Dot</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Add</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">cg</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">cg</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">def</span> <span class="nf">_op_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
 
-    <span class="k">def</span> <span class="nf">_gradfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">_a_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span>
-        <span class="k">def</span> <span class="nf">_b_grad</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span>
-        <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_a_grad</span>
-        <span class="k">elif</span> <span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_b_grad</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Unknown input for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functional_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Multiply</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">_op_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span>  <span class="c1"># element wise multiplication</span>
+
+
+<span class="k">class</span> <span class="nc">Square</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">),))</span>
+
+    <span class="k">def</span> <span class="nf">_op_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Dot</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Variable</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">_op_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Note that the two methods to override are <code class="docutils literal notranslate"><span class="pre">call</span></code> (forward) and
-<code class="docutils literal notranslate"><span class="pre">_gradfn</span></code> (backward).  The function <code class="docutils literal notranslate"><span class="pre">call</span></code> can return either a number
-or array or an OperatorNode. The function <code class="docutils literal notranslate"><span class="pre">_gradfn</span></code> should return <em>a
-function</em> that represents the gradient function, which takes in the
-same inputs as the operator.</p>
+<p>Note that every time when using an operator to compose a function,
+you need to create a new object for it. For convenience, you
+could define utility functions like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Add</span><span class="p">()(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">mult</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Multiply</span><span class="p">()(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Square</span><span class="p">()(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">dot</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Dot</span><span class="p">()(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 <section id="installation">
@@ -332,25 +460,34 @@ Essentially:</p>
 </section>
 <section id="progress-tracker">
 <h2>Progress tracker<a class="headerlink" href="#progress-tracker" title="Permalink to this headline"></a></h2>
+<ol class="simple">
+<li><p>Build a framework for automatic differentiation</p>
 <ul class="simple">
-<li><p>[X] Implement basic feed-forward network</p></li>
-<li><p>[ ] Be able to train the network using gradient descent</p>
-<ul>
-<li><p>[-] Implement a framework for automatic differentiation</p>
-<ul>
-<li><p>[X] computational graph forward construction (05/06/2022)</p></li>
-<li><p>[X] backward gradient accumulation (05/09/2022)</p></li>
-<li><p>[ ] log space</p></li>
-<li><p>[ ] vectorization tests</p></li>
+<li><p>Design with a PyTorch-like API</p></li>
+<li><p>Able to do forward pass</p></li>
+<li><p>Able to do backward pass (backprop) for scalar input/output</p></li>
+<li><p>Extension to vector, matrix, tensor input/output (using JAX)</p></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><p>[ ] Implement convolutional neural network</p></li>
-<li><p>[ ] Implement recurrent neural network</p></li>
-<li><p>[ ] Implement auto-encoder</p></li>
-<li><p>[ ] Implement transformer</p></li>
-</ul>
+</ol>
+</section>
+<section id="troubleshooting-jax">
+<h2>Troubleshooting JAX<a class="headerlink" href="#troubleshooting-jax" title="Permalink to this headline"></a></h2>
+<p>If you experience the following error messages when performing a seemingly simple
+operation such as <code class="docutils literal notranslate"><span class="pre">jnp.dot</span></code>,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2022</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">14</span> <span class="mi">00</span><span class="p">:</span><span class="mi">05</span><span class="p">:</span><span class="mf">33.943054</span><span class="p">:</span> <span class="n">E</span> <span class="n">external</span><span class="o">/</span><span class="n">org_tensorflow</span><span class="o">/</span><span class="n">tensorflow</span><span class="o">/</span><span class="n">stream_executor</span><span class="o">/</span><span class="n">cuda</span><span class="o">/</span><span class="n">cuda_blas</span><span class="o">.</span><span class="n">cc</span><span class="p">:</span><span class="mi">232</span><span class="p">]</span> <span class="n">failed</span> <span class="n">to</span> <span class="n">create</span> <span class="n">cublas</span> <span class="n">handle</span><span class="p">:</span> <span class="n">CUBLAS_STATUS_NOT_INITIALIZED</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">14</span> <span class="mi">00</span><span class="p">:</span><span class="mi">05</span><span class="p">:</span><span class="mf">33.943074</span><span class="p">:</span> <span class="n">E</span> <span class="n">external</span><span class="o">/</span><span class="n">org_tensorflow</span><span class="o">/</span><span class="n">tensorflow</span><span class="o">/</span><span class="n">stream_executor</span><span class="o">/</span><span class="n">cuda</span><span class="o">/</span><span class="n">cuda_blas</span><span class="o">.</span><span class="n">cc</span><span class="p">:</span><span class="mi">234</span><span class="p">]</span> <span class="n">Failure</span> <span class="n">to</span> <span class="n">initialize</span> <span class="n">cublas</span> <span class="n">may</span> <span class="n">be</span> <span class="n">due</span> <span class="n">to</span> <span class="n">OOM</span> <span class="p">(</span><span class="n">cublas</span> <span class="n">needs</span> <span class="n">some</span> <span class="n">free</span> <span class="n">memory</span> <span class="n">when</span> <span class="n">you</span>
+ <span class="n">initialize</span> <span class="n">it</span><span class="p">,</span> <span class="ow">and</span> <span class="n">your</span> <span class="n">deep</span><span class="o">-</span><span class="n">learning</span> <span class="n">framework</span> <span class="n">may</span> <span class="n">have</span> <span class="n">preallocated</span> <span class="n">more</span> <span class="n">than</span> <span class="n">its</span> <span class="n">fair</span> <span class="n">share</span><span class="p">),</span> <span class="ow">or</span> <span class="n">may</span> <span class="n">be</span> <span class="n">because</span> <span class="n">this</span> <span class="n">binary</span> <span class="n">was</span> <span class="ow">not</span> <span class="n">built</span> <span class="k">with</span> <span class="n">support</span> <span class="k">for</span> <span class="n">the</span> <span class="n">GPU</span> <span class="ow">in</span> <span class="n">your</span> <span class="n">machine</span><span class="o">.</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">14</span> <span class="mi">00</span><span class="p">:</span><span class="mi">05</span><span class="p">:</span><span class="mf">33.943104</span><span class="p">:</span> <span class="n">F</span> <span class="n">external</span><span class="o">/</span><span class="n">org_tensorflow</span><span class="o">/</span><span class="n">tensorflow</span><span class="o">/</span><span class="n">compiler</span><span class="o">/</span><span class="n">xla</span><span class="o">/</span><span class="n">service</span><span class="o">/</span><span class="n">gpu</span><span class="o">/</span><span class="n">gemm_algorithm_picker</span><span class="o">.</span><span class="n">cc</span><span class="p">:</span><span class="mi">324</span><span class="p">]</span> <span class="n">Check</span> <span class="n">failed</span><span class="p">:</span> <span class="n">stream</span><span class="o">-&gt;</span><span class="n">parent</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">GetBlasGemmAlgorithms</span><span class="p">(</span><span class="o">&amp;</span><span class="n">algorithms</span><span class="p">)</span>
+<span class="n">Aborted</span> <span class="p">(</span><span class="n">core</span> <span class="n">dumped</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then, according to <a class="reference external" href="https://github.com/google/jax/issues/7118">this github thread</a>,
+there maybe something funky with your CUDA / JAX version stuff. And you should run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">XLA_PYTHON_CLIENT_PREALLOCATE</span><span class="o">=</span><span class="n">false</span>
+</pre></div>
+</div>
+<p>although I am not sure if with that GPU still gets used? <strong>YES. I CAN CONFIRM THAT IT IS USED; The memory is dynamically allocated.</strong></p>
 </section>
 </section>
 

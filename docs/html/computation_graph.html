@@ -38,7 +38,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="source/README.html">zkynet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/README.html">zkynet: Exploring deep learning basics through implementations</a></li>
 </ul>
 
         </div>
@@ -270,7 +270,9 @@ to call.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="zkynet.framework.computation_graph.Operator._gradfn">
 <span class="sig-name descname"><span class="pre">_gradfn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inpt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/zkynet/framework/computation_graph.html#Operator._gradfn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Operator._gradfn" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the ‘call_fun’ used when building a Module;
+<dd><p>Returns the ‘call_fun’ used when building a Module,
+that represents the gradient of this operator with
+respect to input.  Using JAX.
 TO BE OVERRIDDEN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -285,6 +287,14 @@ df(a,b)/da could be written as df/da(a,b).</p></li>
 <dd class="field-even"><p>a function that takes in <a href="#id1"><span class="problematic" id="id2">*</span></a>self.inputs</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.Operator.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">input_nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/zkynet/framework/computation_graph.html#Operator.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.Operator.call" title="Permalink to this definition"></a></dt>
+<dd><p>We will use JAX to implement the operator’s logic. As a result,
+an Operator will have a _call function that takes in jax arrays
+as inputs (each is the value of the corresponding input node).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -338,7 +348,8 @@ return a OperatorNode.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>call_fun</strong> (<em>function</em>) – function to be called. This
 supports dynamic construction of a new module
-with a custom call function.</p>
+with a custom call function. This function has
+the same definition as the ‘call’ in Function.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -639,6 +650,18 @@ stored within nodes on this graph.</p>
 <dt class="sig sig-object py" id="zkynet.framework.computation_graph.OperatorNode.send">
 <span class="sig-name descname"><span class="pre">send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gvalue</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/zkynet/framework/computation_graph.html#OperatorNode.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.OperatorNode.send" title="Permalink to this definition"></a></dt>
 <dd><p>sends dF/dc (where F is the trigger function) to the child</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="zkynet.framework.computation_graph.OperatorNode.vjp">
+<span class="sig-name descname"><span class="pre">vjp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/zkynet/framework/computation_graph.html#OperatorNode.vjp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#zkynet.framework.computation_graph.OperatorNode.vjp" title="Permalink to this definition"></a></dt>
+<dd><p>The Vector Jacobian Product. This is roughtly computing
+the chain rule from the function’s output up to the child:</p>
+<p>dF/dp * dp/dc.</p>
+<p>Here, p = self, c = child, and F = Module. The dp/dc is the
+Jacobian matrix (in practice a tensor) specific to the underlying
+operator.  while dF/dp is the “vector” (which in practice can be a
+tensor), stored in self.gvalue.</p>
 </dd></dl>
 
 </dd></dl>
