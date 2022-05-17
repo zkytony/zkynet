@@ -25,22 +25,22 @@ def test_forward_backward(x, w):
     _f = f(_z1, _z2)
 
     print("Forward pass:")
-    print("    _F({x}, {w}) =", _f)
+    print(f"    _F({x}, {w}) =", _f)
 
     dFdz1 = jacrev(f, argnums=0)(_z1, _z2)
     dFdz2 = jacrev(f, argnums=1)(_z1, _z2)
     print("Backward pass:")
-    print("    dF/dz1 =", dFdz1)
-    print("    dF/dz2 =", dFdz2)
+    print("    dF/dz1 =\n", dFdz1)
+    print("    dF/dz2 =\n", dFdz2)
 
     dz2dw = jacrev(z2, argnums=1)(x, w)
     dFdw = dFdz2 * dz2dw
-    print("    dF/dw  = dF/dz2 * dz2/dw =", dFdw)
+    print("    dF/dw  = dF/dz2 * dz2/dw =\n", dFdw)
     assert jnp.all(dFdw == jacrev(F, argnums=1)(x, w))
     dz1dx = jacrev(z1, argnums=0)(x)
     dz2dx = jacrev(z2, argnums=0)(x, w)
     dFdx = dFdz1 * dz1dx + dFdz2 * dz2dx
-    print("    dF/dx  = dF/dz1 * dz1/dx =", dFdx)
+    print("    dF/dx  = dF/dz1 * dz1/dx =\n", dFdx)
     assert jnp.all(dFdx == jacrev(F, argnums=0)(x, w))
 
 def test_scalar_input():
