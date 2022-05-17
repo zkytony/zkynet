@@ -20,19 +20,8 @@ def test_linear_operator():
     y = linfn(x)
     assert (y.value == jnp.array([[2, -165, 112]])).all()
 
-    # # For gradient, we will test against pytorch;
-    # # btw: here is how you manually set weights for
-    # # a PyTorch module; But first, let's check forward.
-    # torch_linfn = torch.nn.Linear(2, 3, bias=True)
-    # torch_linfn.weight = torch.nn.Parameter(torch.tensor(W0.transpose()))
-    # torch_linfn.bias = torch.nn.Parameter(torch.tensor(b0))
-    # assert (torch_linfn(torch.tensor(x)) == torch.tensor(y.value)).all()
-
     y.back()
     print(y.grad(linfn.param("W")))
-
-    # torch_y = torch_linfn(torch.tensor(x))
-    # import pdb; pdb.set_trace()
 
 
 def run():
