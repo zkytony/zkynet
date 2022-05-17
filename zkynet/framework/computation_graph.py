@@ -867,8 +867,16 @@ class OperatorNode(Node):
     def vjp(self, child):
         input_vals = (ch.value for ch in self.children)
         vjp_fun = self.operator.make_vjp(*input_vals)
-        return vmap(vjp_fun)(self.gvalue)[child.parent_input_index(self)]
-
+        # We do vmap multiple times over vjp_fun to get a function that can
+        # take in self.gvalue, a tensor.  Each application of vmap
+        # increases one tensor dimension the resulting function can handle.
+        # We know that vjp works for 1D tensor, vmap(vjp) works for 2D,
+        # vmap(vmap(vjp)) works for 3D, etc.
+        tensor_dims = len(self.gvalue.shape)
+        tensor_vjp_fun = vmap(vjp_fun)
+        for d in range(tensor_dims-3):
+            tensor_vjp_fun = vmap(tensor_vjp_fun)
+        return tensor_vjp_fun(self.gvalue)[child.parent_input_index(self)]
 
 class ModuleGraph:
     """
