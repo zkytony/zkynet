@@ -13,7 +13,10 @@ def z1(x, w):
 def z2(x, w):
     return x + w
 
-def F(x, w):
+def F(f):
+    return f
+
+def F_full(x, w):
     _z1 = z1(x,w)
     _z2 = z2(x,w)
     _f = f(_z1, _z2)
@@ -34,26 +37,29 @@ def test_forward_backward(x, w):
     _z1 = z1(x,w)
     _z2 = z2(x,w)
     _f = f(_z1, _z2)
+    _F = F(_f)
 
     print("Forward pass:")
     print(f"    _F({x}, {w}) =", _f)
 
-    dFdz1 = jacrev(f, argnums=0)(_z1, _z2)
-    dFdz2 = jacrev(f, argnums=1)(_z1, _z2)
+    dFdf = jacrev(F, argnums=0)(_f)
+    dfdz1 = jacrev(f, argnums=0)(_z1, _z2)
+    dfdz2 = jacrev(f, argnums=1)(_z1, _z2)
     print("Backward pass:")
-    print("    dF/dz1 =\n", dFdz1)
-    print("    dF/dz2 =\n", dFdz2)
+    print("    dF/df  =\n", dFdf)
+    print("    df/dz1 =\n", dfdz1)
+    print("    df/dz2 =\n", dfdz2)
 
     dz2dw = jacrev(z2, argnums=1)(x, w)
     dz1dw = jacrev(z1, argnums=1)(x, w)
-    dFdw = dot(dFdz1, dz1dw) + dot(dFdz2, dz2dw)
-    print("    dF/dw  = dF/dz2 * dz2/dw =\n", dFdw)
-    assert jnp.all(dFdw == jacrev(F, argnums=1)(x, w))
+    dFdw = dot(dot(dFdf, dfdz1), dz1dw) + dot(dot(dFdf, dfdz2), dz2dw)
+    print("    dF/dw  = dF/df * df/dz1 * dz1/dw + dF/df * df/dz2 * dz2/dw =\n", dFdw)
+    assert jnp.all(dFdw == jacrev(F_full, argnums=1)(x, w))
     dz1dx = jacrev(z1, argnums=0)(x, w)
     dz2dx = jacrev(z2, argnums=0)(x, w)
-    dFdx = dot(dFdz1, dz1dx) + dot(dFdz2, dz2dx)
-    print("    dF/dx  = dF/dz1 * dz1/dx =\n", dFdx)
-    assert jnp.all(dFdx == jacrev(F, argnums=0)(x, w))
+    dFdx = dot(dot(dFdf, dfdz1), dz1dx) + dot(dot(dFdf, dfdz2), dz2dx)
+    print("    dF/dx  = dF/df * df/dz1 * dz1/dx + dF/df * df/dz2 * dz2/dx =\n", dFdx)
+    assert jnp.all(dFdx == jacrev(F_full, argnums=0)(x, w))
 
 def test_scalar_input():
     print("============= test_scalar_input ==============")
@@ -89,8 +95,8 @@ def test_tensor_input():
     test_forward_backward(x, w)
 
 def run():
-    test_scalar_input()
-    test_vector_input()
+    # test_scalar_input()
+    # test_vector_input()
     test_matrix_input()
     test_tensor_input()
 
