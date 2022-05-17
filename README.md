@@ -2,8 +2,7 @@
 
 An autodiff framework with a PyTorch-like API that supports tensor inputs and outputs.
 
-**Caveat: The autodiff of the current framework only works for
-scalar/vector input and output.**
+**Caveat: the tensor input may throw exceptions**
 
 Key points to note:
 - all inputs to functions represented using our computational graph are
