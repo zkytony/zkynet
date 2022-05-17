@@ -16,13 +16,13 @@ def z2(x, w):
 def F(x, w):
     _z1 = z1(x)
     _z2 = z2(x,w)
-    _f = f(z1, z2)
+    _f = f(_z1, _z2)
     return _f
 
 def test_forward_backward(x, w):
     _z1 = z1(x)
     _z2 = z2(x,w)
-    _f = f(z1, z2)
+    _f = f(_z1, _z2)
 
     print("Forward pass:")
     print("    _F({x}, {w}) =", _f)
@@ -36,11 +36,12 @@ def test_forward_backward(x, w):
     dz2dw = jacrev(z2, argnums=1)(x, w)
     dFdw = dFdz2 * dz2dw
     print("    dF/dw  = dF/dz2 * dz2/dw =", dFdw)
-    assert dFdw == jacrev(F, argnums=1)(x, w)
+    assert jnp.all(dFdw == jacrev(F, argnums=1)(x, w))
     dz1dx = jacrev(z1, argnums=0)(x)
     dz2dx = jacrev(z2, argnums=0)(x, w)
     dFdx = dFdz1 * dz1dx + dFdz2 * dz2dx
     print("    dF/dx  = dF/dz1 * dz1/dx =", dFdx)
+    assert jnp.all(dFdx == jacrev(F, argnums=0)(x, w))
 
 def test_scalar_input():
     print("============= test_scalar_input ==============")
