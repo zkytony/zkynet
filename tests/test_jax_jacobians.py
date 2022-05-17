@@ -98,7 +98,7 @@ def run():
     # test_scalar_input()
     # test_vector_input()
     test_matrix_input()
-    test_tensor_input()
+    # test_tensor_input()
 
 if __name__ == "__main__":
     run()

@@ -23,6 +23,7 @@ def test_model1_gradient():
     assert result.grad(m.param("w")) == 9.
     # dF/dx = 6w+27 = 33
     assert result.grad(m.input("x")) == 33.
+    print("scalar input pass.")
 
 
 def test_model1_gradient_vectorized():
@@ -40,6 +41,7 @@ def test_model1_gradient_vectorized():
 
     assert jnp.all(result.grad(m.input("x")) == jax_x_grad)
     assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
+    print("vector input pass.")
 
     # 2D (matrix)
     x2 = jnp.array([[3., 4., 5.],
@@ -52,6 +54,28 @@ def test_model1_gradient_vectorized():
     result.back()
     assert jnp.all(result.grad(m.input("x")) == jax_x_grad)
     assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
+    print("matrix input pass.")
+
+    # 3D (tensor)
+    x3 = jnp.array([[[[3., 4., 5.]],
+                     [[-1., 2., -3.]]],
+                    [[[2., 0., 5.]],
+                     [[3., 1., -1.]]]])
+
+    # w = jnp.array(1.)
+    w3 = jnp.array([[[[1., 2., 1.]],
+                     [[1., 1., 1.]]],
+                    [[[-1., 1., 1.]],
+                     [[1., 1., 1.]]]])
+    m = MyTestModel1(w0=w3)
+    result = m(x3)
+    result.back()
+    jax_x_grad = jacrev(model1fun, argnums=0)(x3, m.param("w").value)
+    jax_w_grad = jacrev(model1fun, argnums=1)(x3, m.param("w").value)
+    assert jnp.all(result.grad(m.input("x")) == jax_x_grad)
+    assert jnp.all(result.grad(m.param("w")) == jax_w_grad)
+    print("tensor input pass.")
+
 
 
 def test_composite_model_gradient():
@@ -87,7 +111,7 @@ def test_composite_model_gradient():
 
 
 def run():
-    # test_model1_gradient()
+    test_model1_gradient()
     test_model1_gradient_vectorized()
     test_composite_model_gradient()
 

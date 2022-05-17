@@ -17,9 +17,7 @@ def backpropdot(t1, t2):
     """returns the product of two tensors t1 and t2
     that can deal with the case when t1 or t2 are
     vectors or matrices instead. Used in backprop."""
-    if t1.shape == () and t1 == jnp.array(1.):
-        return t2
-    elif len(t1.shape) <= 2 and len(t2.shape) <= 2:
+    if len(t1.shape) <= 2 and len(t2.shape) <= 2:
         return jnp.dot(t1, t2)
     elif len(t1.shape) <= 4 and len(t2.shape) <= 4:
         return jnp.tensordot(t1, t2)

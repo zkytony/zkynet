@@ -14,10 +14,13 @@ class Identity(Operator):
         super().__init__(inputs=(Variable("x"),))
 
     def call(self, x):
-        return x.value
+        return self._call(x.value)
 
-    def grad(self, var):
-        return 1
+    def _call(self, x):
+        return jnp.identity(x)
+
+    def _gradfn(self, inpt):
+        return jacrev(self._call, argnums=1)(x.value)
 
 
 class Add(Operator):
