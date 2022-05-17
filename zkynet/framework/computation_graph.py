@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import jacrev, vjp, vmap
 
-DEBUG=False
 
 ########## Auxiliary objects ##########
 class CallSessionManager:
@@ -879,11 +878,12 @@ class OperatorNode(Node):
         """
         input_vals = (ch.value for ch in self.children)
         vjp_fun = self.operator.make_vjp(*input_vals)
-        # We do vmap multiple times over vjp_fun to get a function that can
-        # take in self.gvalue, a tensor.  Each application of vmap
-        # increases one tensor dimension the resulting function can handle.
-        # We know that vjp works for 1D tensor, vmap(vjp) works for 2D,
-        # vmap(vmap(vjp)) works for 3D, etc.
+        # By default, vjp takes in a vector only. We do vmap multiple times
+        # over vjp_fun to get a function that can take in self.gvalue, a
+        # tensor.  Each application of vmap increases one tensor dimension
+        # the resulting function can handle.  We know that vjp works for 1D
+        # tensor, vmap(vjp) works for 2D, vmap(vmap(vjp)) works for 3D,
+        # etc.
         tensor_vjp_fun = vjp_fun
         # Number of tensor dimensions we shall vectorize the vjp function over;
         # It is the difference between the dimension vjp can handle (which is
@@ -891,14 +891,8 @@ class OperatorNode(Node):
         # in self.value) and the desired dimension we need (which is based on
         # self.gvalue, which can be seen as df/dp)
         vec_tensor_dims = len(self.gvalue.shape)-len(self.value.shape)
-        if DEBUG:
-            ss = "vmap(vjp_fun"
         for d in range(vec_tensor_dims):
-            if DEBUG:
-                ss = "vmap(" + ss
             tensor_vjp_fun = vmap(tensor_vjp_fun)
-        if DEBUG:
-            print(ss)
         return tensor_vjp_fun(self.gvalue)[child.parent_input_index(self)]
 
 
