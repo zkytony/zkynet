@@ -6,7 +6,7 @@ Key points to note:
 - All inputs to functions represented using our computational graph are
   expected to be [JAX arrays](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.array.html).
   
-- This is designed completely from scratch after reading and understanding the autodiff algorithm. It is in no way optimal but it is an incredibly useful exercise. 
+- This is designed completely from scratch after reading and understanding the autodiff algorithm. It is in no way optimal but it is an incredibly useful exercise and learning experience. 
 
 
 ## Concepts
