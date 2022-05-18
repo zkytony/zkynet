@@ -410,7 +410,7 @@ Install [JAX](https://github.com/google/jax).
       pip install --upgrade "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_releases.html  # Note: wheels only available on linux.
       ```
       
-### Install Flax
+### Install Flax (not used for now)
 Check out [the flax installation docs](https://flax.readthedocs.io/en/latest/installation.html):
 ```
 pip install flax
