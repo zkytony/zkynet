@@ -3,8 +3,10 @@
 An autodiff framework with a PyTorch-like API that supports tensor inputs and outputs.
 
 Key points to note:
-- all inputs to functions represented using our computational graph are
+- All inputs to functions represented using our computational graph are
   expected to be [JAX arrays](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.array.html).
+  
+- This is designed completely from scratch after reading and understanding the autodiff algorithm. It is in no way optimal but it is an incredibly useful exercise. 
 
 
 ## Concepts
